@@ -1,0 +1,97 @@
+---
+title: "CARMICHAEL_OregonBeesAndWildfires.rmd"
+output: pdf_document
+date: "2024-10-26"
+---
+
+# General topic of interest in relation to the Oregon Bee Atlas data 
+We want to focus our project on the impact of wildfires and how their devastation of ecosystems influences bee populations.
+
+# Potential questions within that topic area
+How does species richness in bee populations differ in areas affected by recent wildfires? We can compare this to areas that are left unaffected.
+How fast do bee populations recover in areas affected by wildfires? How do these timelines differ between habitats?
+Does wildfire severity play a role in bee abundance and richness?
+What traits make bees more resilient to wildfires/ ecological disturbances?
+How do bee and Native plant species differ in areas before and after wildfires?
+How does the availability of Native floral resources post-wildfire ecosystems influence bee populations?
+Does wildfire affect the patterns of seasonal bee behaviors? 
+
+# Potential additional datasets within that topic area (e.g., specify relevant government databases, academic data repositories, etc)
+
+iNaturalist
+Oregon Bee Atlas
+Oregon Department of Forestry Fire History
+Oregon Department of Forestry Data Hub
+Bee Trait Data
+Oregon Flora
+East Multnomah Soil and Water Conservation District
+NOAA
+PRISM Climate Group
+USGS Earth Explorer
+Monitoring Trends In Burn Severity (MTBS)
+Oregon Spatial Data Library
+
+# The name of your partner 
+Ali Carmichael
+Vincent Cortes
+
+# The name of your partner, and what parts of this assignment they contributed to, and what parts they wrote. 
+
+Ali Carmichael - Contributed to potential questions within the topic area and also potential additional data sets.
+
+Vincent Cortes - Contributed to potential questions within the topic area and also potential additional data sets. 
+
+# workflow plan
+I. Literature review
+We expect the literature review will be around 5 well-cited paragraphs that do the following:
+Introduce the problem and explain why
+Set the stage for the problem
+https://www.pdx.edu/news/latest-climate-assessment-says-oregon-getting-warmer-whats-mean-state
+https://www.noaa.gov/noaa-wildfire/wildfire-climate-connection
+
+
+https://www.usda.gov/peoples-garden/pollinators#:~:text=Three%2Dfourths%20of%20the%20world's,bites%20of%20food%20you%20eat.
+
+Put the concept and question into context
+
+
+Lots of big-picture citations (such as reviews) in the first paragraph
+Past work and data available
+Who has addressed this problem (perhaps with a different dataset/region), and what did they do it?
+https://www.ponisiolab.com/uploads/9/4/6/4/94640692/wilkin-317.pdf
+https://www.sciencedirect.com/science/article/pii/S0006320721003177?via%3Dihub
+
+What are the data available to address this problem (in addition to the OBA dataset)?
+iNaturalist
+Oregon Bee Atlas
+Oregon Department of Forestry Fire History
+Oregon Department of Forestry Data Hub
+Bee Trait Data
+Oregon Flora
+East Multnomah Soil and Water Conservation District
+NOAA
+PRISM Climate Group
+USGS Earth Explorer
+Monitoring Trends In Burn Severity (MTBS)
+Oregon Spatial Data Library
+
+Purpose of the study
+Further refine your approach (e.g., what data will you combine, how will you address the question)
+
+
+Justify why this is needed now (e.g., visualization to test a new dimension of the question or better convey an old one)
+
+Hypotheses/questions
+List these clearly and in a logical order
+
+
+Make hypotheses directionally using predictions (e.g. “I predict urbanization will reduce plant diversity” rather than “I predict urbanization will change plant diversity”)
+
+II. Dataset identification
+Please identify the additional datasets you will be using to address your question. * Provide the data source (including web url) * Describe sufficient metadata to convey who collected the data, how it was collected, and what each column contains.
+III. Workflow plan
+In pros, please describe the workflow you will use tidy your raw data, manipulate and summarize it in relevant ways, test you hypothesis, and visualize it.The goal here is to develop a logic to your workflow before you code. * Include any needed cleaning steps (e.g., “remove non-species such as ‘fly’ from the species column”) * Include any aggregation steps (e.g., “count the number of entries by region and year to calculate species richness”). * Include descriptions of any functions/for loops you will write.
+* Include a description the the statistical test you will use, and how you will apply it programatically (i.e., I will simulate the null hypothesis by shuffling the labels…“)
+ 
+IV. Partner contributions
+Each person will turn in a separate document, though the above content will be the same. Here, summarize how each partner contributed. Ex: "We met and discussed the workflow plan together and wrote it together. We both made an annotated bibliography of the available studies, and then I summarized them. My partner reviewed what I wrote and edited it. My partner drafted the purpose of the study, and I gave edits."
