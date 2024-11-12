@@ -43,17 +43,13 @@ Vincent Cortes - Contributed to potential questions within the topic area and al
 
 # workflow plan
 I. Literature review
-We expect the literature review will be around 5 well-cited paragraphs that do the following:
-Introduce the problem and explain why
-Set the stage for the problem
+In Oregon, recent data shows a clear increase in wildfire frequency and intensity, largely due to extreme heat, drought frequency, and less cold weather caused by climate change. Increased temperature and lack of moisture in fire fuel like trees, shrubs, grasses, and forest debris can create several factors required to fuel large-scale fires. According to Oregon Climate Assessments, Oregon saw more days per year near 90 degrees between 2011 and 2020 than between 1951 and 2010 (Rojas). Since 2015, Oregon has experienced significant, record-breaking wildfire seasons that have led to massive destruction and ecosystem disruptions. A study cited by the National Oceanic and Atmospheric Administration (NOAA) found that climate change has doubled the area burned in western U.S. forests between 1984 and 2015. Furthermore, research shows that an average annual increase in temperature of 1 degree Celsius could increase the median burned area per year by as much as 600% in some forests (NOAA). Ongoing warming could continue amplifying fire seasons, posing long-term threats to Oregon’s forest and wildlife. 
+According to the USDA, pollinators such as bees, butterflies, and birds pollinate around three-fourths of the world’s flowering plants, making pollinators essential for biodiversity (USDA Pollinators). The increase in wildfires, especially in regions like Oregon, poses a significant threat to pollinators. Wildfires are responsible for habit loss that has contributed to the decline of many pollinator species (USDA Pollinators). Fire can disrupt the balance of ecosystems and reduce plant diversity that pollinator species, especially bees, rely on to survive. In some cases, natural wildfires can benefit pollinators by promoting the growth of smaller, low-growing, flowering plants that support diverse bee populations. However, with the increase of recent wildfire activity, any potential benefit from these fires may be outweighed by the harm they cause to pollinator species, especially bees. 
+
 https://www.pdx.edu/news/latest-climate-assessment-says-oregon-getting-warmer-whats-mean-state
 https://www.noaa.gov/noaa-wildfire/wildfire-climate-connection
 
-
 https://www.usda.gov/peoples-garden/pollinators#:~:text=Three%2Dfourths%20of%20the%20world's,bites%20of%20food%20you%20eat.
-
-Put the concept and question into context
-
 
 Lots of big-picture citations (such as reviews) in the first paragraph
 Past work and data available
