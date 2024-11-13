@@ -51,9 +51,12 @@ https://www.noaa.gov/noaa-wildfire/wildfire-climate-connection
 
 https://www.usda.gov/peoples-garden/pollinators#:~:text=Three%2Dfourths%20of%20the%20world's,bites%20of%20food%20you%20eat.
 
-Lots of big-picture citations (such as reviews) in the first paragraph
 Past work and data available
-Who has addressed this problem (perhaps with a different dataset/region), and what did they do it?
+
+Wilkin et al. (2021) in Biological Conservation explore how wildfires affect declining pollinator communities. This research is useful to our study, as it explores changes in pollinator species richness and diversity after wildfires in various forest ecosystems. For example, the paper illustrates that intense, frequent fires can significantly reduce floral resources pollinators need to survive, affecting populations long-term. Using this study, we can consider how similar effects might impact Oregon pollinators with the surge of wildfire activity in various regions of Oregon.
+
+Ponisio et al. (2016) discuss the effects of ecosystem disturbances, including wildfire, on bee biodiversity. This paper explores the concept that while some disturbance may potentially benefit pollinator populations by promoting the growth of specific plant species that thrive post-fire, excessive, intense, and poorly managed fires can lead to habitat destruction. The study illustrates the complexity of fires and their disturbances. This is shown by the ability of certain bee species to thrive in post-fire environments, while other species’ populations may decline. Using this approach, we can understand and highlight the importance of balancing the management of fire-prone regions in Oregon.
+
 https://www.ponisiolab.com/uploads/9/4/6/4/94640692/wilkin-317.pdf
 https://www.sciencedirect.com/science/article/pii/S0006320721003177?via%3Dihub
 
