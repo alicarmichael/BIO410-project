@@ -60,19 +60,13 @@ Ponisio et al. (2016) discuss the effects of ecosystem disturbances, including w
 https://www.ponisiolab.com/uploads/9/4/6/4/94640692/wilkin-317.pdf
 https://www.sciencedirect.com/science/article/pii/S0006320721003177?via%3Dihub
 
-What are the data available to address this problem (in addition to the OBA dataset)?
-iNaturalist
-Oregon Bee Atlas
-Oregon Department of Forestry Fire History
-Oregon Department of Forestry Data Hub
-Bee Trait Data
-Oregon Flora
-East Multnomah Soil and Water Conservation District
-NOAA
-PRISM Climate Group
-USGS Earth Explorer
-Monitoring Trends In Burn Severity (MTBS)
-Oregon Spatial Data Library
+iNaturalist: Provides observations of native species in different regions of the Western U.S. that provide insight into what native plant species thrived in pre and post-fire environments in areas with known fires. 
+
+Oregon Department of Forestry Fire History: Offers detailed records of past fires in Oregon that can be used when correlating fire events with changes in pollinator populations. 
+
+Oregon Flora: Provides information on native flora in different regions of Oregon. This could be useful in identifying what species of native plants thrive in post-fire environments.
+
+Oregon Spatial Data Library: Include geographical and satellite imagery which can help visualize fire-affected areas and understand the landscape changes before and after fires that may influence pollinator habitats.
 
 Purpose of the study
 Further refine your approach (e.g., what data will you combine, how will you address the question)
