@@ -19,23 +19,33 @@ library(plotly)
 all_fires <- read.csv("data/fire_data_2000-2020.csv")
 
 head(all_fires)
-all_fires_df <- all_fires[, c("FireName", "FireYear","Size_class""EstTotalAcres", "Long_DD", "Lat_DD")]
+all_fires_df <- all_fires[, c("FireName", "FireYear","Size_class","EstTotalAcres", "Long_DD", "Lat_DD")]
 head(all_fires_df)
 
 #filters only 2020 fires
 firedata_2020 <- all_fires_df %>%
   filter(FireYear == 2020)
 
-firedata_2020
-
 #remove line for missing 
 firedata_2020_new <- firedata_2020[-447,]
-firedata_2020_new
 
+#convert from factor to character 
+firedata_2020_new$Size_class <- as.character(firedata_2020_new$Size_class)
+#convert high, moderate, etc to 1, 2, 3, 4
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "A"] <- "1"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "B"] <- "2"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "C"] <- "3"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "D"] <- "4"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "E"] <- "5"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "F"] <- "6"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "G"] <- "7"
+#change em back to a factor
+firedata_2020_new$Size_class <- as.factor(firedata_2020_new$Size_class)
 
-firedata_2020_new <- str_replace(firedata_2020_new$Size_class, {})
 
 all_fires_sf <- st_as_sf(firedata_2020_new, coords = c("Long_DD", "Lat_DD"), crs = 4326)
+
+head(all_fires_sf)
 ```
 Loading in the data, and building a data frame with only the columns we need. I also removed any fires that didnt have any cords, mainly just line 165.
 ```{r load and build df}
@@ -86,7 +96,7 @@ ggplot() +
 ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
                fill = "lightgrey", color = "white") +
-  geom_sf(data = all_fires_sf, aes(color = ), size = all_fires_sf$, alpha = 0.9) +
+  geom_sf(data = all_fires_sf, aes(color = Size_class), size = all_fires_sf$Size_class, alpha = 0.9) +
   labs(title = "Distribution of Oregon Fires in 2020",
        x = "Longitude", 
        y = "Latitude") +
