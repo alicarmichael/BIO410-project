@@ -31,7 +31,8 @@ firedata_2020_new <- firedata_2020[-447,]
 
 #convert from factor to character 
 firedata_2020_new$Size_class <- as.character(firedata_2020_new$Size_class)
-#convert high, moderate, etc to 1, 2, 3, 4
+
+#convert A, B, etc to 1, 2, 3, 4
 firedata_2020_new$Size_class[firedata_2020_new$Size_class == "A"] <- "1"
 firedata_2020_new$Size_class[firedata_2020_new$Size_class == "B"] <- "2"
 firedata_2020_new$Size_class[firedata_2020_new$Size_class == "C"] <- "3"
@@ -39,7 +40,7 @@ firedata_2020_new$Size_class[firedata_2020_new$Size_class == "D"] <- "4"
 firedata_2020_new$Size_class[firedata_2020_new$Size_class == "E"] <- "5"
 firedata_2020_new$Size_class[firedata_2020_new$Size_class == "F"] <- "6"
 firedata_2020_new$Size_class[firedata_2020_new$Size_class == "G"] <- "7"
-#change em back to a factor
+#change them back to a factor
 firedata_2020_new$Size_class <- as.factor(firedata_2020_new$Size_class)
 
 
@@ -103,6 +104,23 @@ ggplot() +
   theme_minimal() +
   coord_sf()
 ```
+```{r}
+Large_2020_fires <- firedata_2020_new %>%
+  filter(Size_class == 7)
+
+Large_2020_fires_sf <- st_as_sf(Large_2020_fires, coords = c("Long_DD", "Lat_DD"), crs = 4326)
+
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = Large_2020_fires_sf, aes(color = Size_class), size = Large_2020_fires_sf$Size_class, alpha = 0.9) +
+  labs(title = "Distribution of Oregon Fires in 2020 with level 7",
+       x = "Longitude", 
+       y = "Latitude") +
+  theme_minimal() +
+  coord_sf()
+```
+
 Loaded the bee obervations, this is from all the years, the entire data set I think. I created a dataframe with only the columns we need.
 ```{r add be data}
 # Now lets add The bee data
@@ -148,6 +166,7 @@ ggplot() +
   theme_minimal() +
   coord_sf()
 ```
+
 Created a 1km buffer around each fire and counted how many bee obervations occured in that buffer.
 ```{r}
 #Now its time to go fire by fire and determin how many bee observations are present in a 1km radius of the fire origin
