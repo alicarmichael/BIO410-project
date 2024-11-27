@@ -103,6 +103,8 @@ ggplot() +
        y = "Latitude") +
   theme_minimal() +
   coord_sf()
+
+Large_2020_fires_sf
 ```
 ```{r}
 Large_2020_fires <- firedata_2020_new %>%
@@ -119,6 +121,8 @@ ggplot() +
        y = "Latitude") +
   theme_minimal() +
   coord_sf()
+
+Large_2020_fires_sf
 ```
 
 Loaded the bee obervations, this is from all the years, the entire data set I think. I created a dataframe with only the columns we need.
@@ -214,5 +218,28 @@ print(result_df)
 
 
 ```{r}
+LionsHead_sf <- read_sf("data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
+
+BeachieCreek_sf <- read_sf("data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
+
+Riverside_sf <- read_sf("data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
+
+ggplot() +
+  #geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+              # fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, color = "Purple", alpha = 0.9) +
+  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
+  labs(
+    title = "Distribution of Oregon Fires in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf()
+
+
+
+
 
 ```
