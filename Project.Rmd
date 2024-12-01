@@ -59,6 +59,68 @@ oba <- oba[!grepl(",", oba$Associated.plant),]
 
 head(oba)
 ```
+Creating a function to clean all of the plant data seperating them into Family, Genus, Species,
+or Missing/complex. Then update the plant names that are only one word to include "sp." so 
+they are all the same. Return the data with the clean and sorted plant names.
+```{r}
+# Function to process plant data
+
+sort_plant_data <- function(data, column) {
+  if (!column %in% names(data)) {
+    # stop if the column name is not in the data set
+    stop("The columnd does not exist in the data.")
+  }
+  
+  # Create the word count column
+  data$Plant.word.count <- sapply(data[[column]], function(x) {
+    length(unlist(strsplit(x, " ")))
+  })
+   # Initialize Plant.resolution column to NA
+  data$Plant.resolution <- NA
+  
+  # Loop through data to build up Plant.resolution column
+  for (i in 1:nrow(data)) {
+    # Determine the plant name
+    plant_name <- data[[column]][i]
+    
+    # Determine word count for each plant name
+    word_count <- length(unlist(strsplit(plant_name, " ")))
+    
+  if (word_count == 1) {
+    if (grepl("aceae$", plant_name)) {
+      data$Plant.resolution[i] <- "Family"
+    } else {
+      data$Plant.resolution[i] <- "Genus"
+    }
+  } else if (word_count == 2 || word_count == 3) {
+    if (grepl("sp\\.$", plant_name)) {
+      data$Plant.resolution[i] <- "Genus"
+    } else {
+      data$Plant.resolution[i] <- "Species"
+    }
+  } else {
+      data$Plant.resolution[i] <- "Missing/complex"
+  }
+}
+  
+  # Fix single word plant names to include "sp."
+  data[[column]] <- str_replace_all(
+    data[[column]],
+    pattern = "^([A-Za-z]+)$",
+    replacement = "\\1 sp."
+  )
+  
+  # Return the cleaned and sorted data
+  return(data)
+}
+
+# Call the function on our oba data
+oba <- sort_plant_data(oba, "Associated.plant")
+
+# Check the results to make sure the function worked as intended
+table(oba$Plant.resolution)
+unique(oba$Associated.plant[oba$Plant.resolution == "Genus"])
+```
 
 ```{r}
 all_fires <- read.csv("data/fire_data_2000-2020.csv")
