@@ -122,6 +122,31 @@ table(oba$Plant.resolution)
 unique(oba$Associated.plant[oba$Plant.resolution == "Genus"])
 ```
 
+Exploring the bee Genus and Species names
+```{r}
+head(oba)
+
+#colnames(oba)
+#oba$Genus
+#oba$Species
+
+oba$GenusSpecies <- paste(oba$Genus, oba$Species)
+head(oba)
+#oba$GenusSpecies
+```
+```{r}
+key_species <- oba %>%
+  filter(Year.1 >= 2018 & Year.1 <= 2022) %>%
+  group_by(Species, Year.1) %>%
+  summarize(Frequency = n(), .groups = "drop") %>%
+  ggplot(aes(x = Year.1, y = Frequency, color = Species)) +
+  geom_point(alpha = 0.6) +
+  labs(title = "Key Species Pre- and Post-Wildfire")
+
+#key_species
+```
+
+
 ```{r}
 all_fires <- read.csv("data/fire_data_2000-2020.csv")
 
