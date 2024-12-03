@@ -138,12 +138,9 @@ head(oba)
 key_species <- oba %>%
   filter(Year.1 >= 2018 & Year.1 <= 2022) %>%
   group_by(Species, Year.1) %>%
-  summarize(Frequency = n(), .groups = "drop") %>%
-  ggplot(aes(x = Year.1, y = Frequency, color = Species)) +
-  geom_point(alpha = 0.6) +
-  labs(title = "Key Species Pre- and Post-Wildfire")
+  summarize(Frequency = n(), .groups = "drop")
 
-#key_species
+key_species
 ```
 
 
@@ -358,7 +355,7 @@ Riverside_sf <- read_sf("data/Riverside/or4504912206220200908_20190720_20210725_
 
 ggplot() +
   #geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
-              # fill = "lightgrey", color = "white") +
+               #fill = "lightgrey", color = "white") +
   geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
   geom_sf(data = BeachieCreek_sf, color = "Purple", alpha = 0.9) +
   geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
@@ -369,9 +366,42 @@ ggplot() +
   ) +
   theme_minimal() +
   coord_sf()
-
-
-
-
-
 ```
+
+```{r}
+#Now its time to go fire by fire and determin how many bee observations are present in a 6km radius of the fire origin
+
+# create a 6 km buffer around each fire
+LionsHead_buffer <- st_buffer(LionsHead_sf, dist = 6000)  # 6000 meters = 6 km
+BeachieCreek_buffer <- st_buffer(BeachieCreek_sf, dist = 6000)
+Riverside_buffer <- st_buffer(Riverside_sf, dist = 6000)
+
+# Create a fire name column for each fire 
+LionsHead_buffer$FireName <- "LionsHead"
+BeachieCreek_buffer$FireName <- "BeachieCreek"
+Riverside_buffer$FireName <- "Riverside"
+
+# Join fires into one fire region
+all_fire_buffer <- rbind(LionsHead_buffer, BeachieCreek_buffer, Riverside_buffer)
+
+print(crs(all_fire_buffer) == crs(bee_observations_sf))
+
+# Transform bee observations to the crs of the fire buffer
+bee_observations_sf <- st_transform(bee_observations_sf, crs(all_fire_buffer))
+
+# Check if the transformation worked
+print(crs(all_fire_buffer) == crs(bee_observations_sf))
+
+# spatial join to find bee observations within the fire buffer
+bee_counts <- st_join(bee_observations_sf, all_fire_buffer, join = st_intersects)
+
+# Count bee observations per fire
+fire_bee_counts <- bee_counts %>%
+  group_by(FireName) %>%  # Group by fire name or another identifier
+  summarize(BeeCount = n())  # Counts the number of bee observations
+
+#create df
+fire_bee_counts_df <- as.data.frame(fire_bee_counts)
+fire_bee_counts_df
+```
+
