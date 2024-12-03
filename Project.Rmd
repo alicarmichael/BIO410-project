@@ -134,15 +134,6 @@ oba$GenusSpecies <- paste(oba$Genus, oba$Species)
 head(oba)
 #oba$GenusSpecies
 ```
-```{r}
-key_species <- oba %>%
-  filter(Year.1 >= 2018 & Year.1 <= 2022) %>%
-  group_by(Species, Year.1) %>%
-  summarize(Frequency = n(), .groups = "drop")
-
-key_species
-```
-
 
 ```{r}
 all_fires <- read.csv("data/fire_data_2000-2020.csv")
@@ -177,6 +168,7 @@ all_fires_sf <- st_as_sf(firedata_2020_new, coords = c("Long_DD", "Lat_DD"), crs
 
 head(all_fires_sf)
 ```
+
 Loading in the data, and building a data frame with only the columns we need. I also removed any fires that didnt have any cords, mainly just line 165.
 ```{r load and build df}
 # Load the data as Fires
@@ -368,6 +360,7 @@ ggplot() +
   coord_sf()
 ```
 
+Creating the 6km buffer around the three fires we will be using
 ```{r}
 #Now its time to go fire by fire and determin how many bee observations are present in a 6km radius of the fire origin
 
@@ -404,4 +397,35 @@ fire_bee_counts <- bee_counts %>%
 fire_bee_counts_df <- as.data.frame(fire_bee_counts)
 fire_bee_counts_df
 ```
+
+Creating a new Column for the site status to determine if the observation was done before or after the fire 
+```{r}
+# Initialize an empty Site status column
+oba$Site.status <- NA
+
+# Loop through the oba data frame
+for (i in 1:nrow(oba)) {
+  if (oba$Year.1[i] < 2020) { # Less than 2020 is equivalent to before the fires
+    oba$Site.status[i] <- "Before Fire"
+  }
+  else if (oba$Year.1[i] > 2020) { # Greater than 2020 is equivalent to after the fires
+    oba$Site.status[i] <- "After Fire"
+  } else { # 2020 gets the status of "During the fire"
+    oba$Site.status[i] <- "During Fire"
+  }
+}
+
+# Inspect the column created
+head(oba)
+```
+
+Subset the oba dataframe to just the observations that are in the buffer of our fires
+```{r}
+oba_and_fire_df <- oba %>% 
+  select()
+```
+
+
+
+
 
