@@ -132,7 +132,7 @@ head(oba)
 #oba$Species
 
 oba$GenusSpecies <- paste(oba$Genus, oba$Species)
-head(oba)
+oba
 #oba$GenusSpecies
 ```
 
@@ -490,16 +490,10 @@ bee_species_in_buffer_sf <- st_as_sf(bee_species_in_buffer_df)
 ```
 
 ```{r}
-oba_df <- oba_clean[, c("GenusSpecies", "Associated.plant", "Dec..Long.", "Dec..Lat.", "Collection.Date")]
-
-oba_df_clean <- oba_df %>%
-  mutate(across(everything(), ~ na_if(trimws(.), ""))) %>%
-  drop_na()
-
-oba_df_clean
 
 
-oba_df_clean_sf <- st_as_sf(oba_df_clean, coords = c("Dec..Long.", "Dec..Lat."), crs = 4326)
+
+oba_sf <- st_as_sf(oba, coords = c("Dec..Long.", "Dec..Lat."), crs = 4326)
 
 ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
@@ -507,7 +501,7 @@ ggplot() +
   geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
   geom_sf(data = BeachieCreek_sf, color = "purple", alpha = 0.9) +
   geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
-  geom_sf(data = oba_df_clean_sf, aes(color = "Blue"), size = 1, alpha = 0.9) +
+  geom_sf(data = oba_sf, aes(color = "Blue"), size = 1, alpha = 0.9) +
   labs(
     title = "Bee observations using OBA data from Lab 8",
     x = "Longitude",
