@@ -14,6 +14,7 @@ library(ggspatial)
 library(plotly)
 library(knitr)
 library(stringr)
+library(tidyr)
 ```
 Cleaning Oregon Bee Atlas data
 ```{r}
@@ -134,6 +135,7 @@ oba$GenusSpecies <- paste(oba$Genus, oba$Species)
 head(oba)
 #oba$GenusSpecies
 ```
+
 ```{r}
 key_species <- oba %>%
   filter(Year.1 >= 2018 & Year.1 <= 2022) %>%
@@ -374,7 +376,7 @@ ggplot() +
   geom_sf(data = BeachieCreek_sf, color = "Red", alpha = 0.9) +
   geom_sf(data = Riverside_sf, color = "Red", alpha = 0.9) +
   labs(
-    title = "Distribution of Oregon Fires in 2020",
+    title = "Location of Oregon's 2020 Santiam Fire",
     x = "Longitude",
     y = "Latitude"
   ) +
@@ -392,11 +394,15 @@ fire_combined_bbox <- fire_combined_bbox + c(-0.1, -0.1, 0.1, 0.1)  #(xmin, ymin
 ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
                fill = "lightgrey", color = "white") +
-  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
-  geom_sf(data = BeachieCreek_sf, color = "purple", alpha = 0.9) +
-  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
+  geom_sf(data = LionsHead_sf, aes(color = "LionsHead"), alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, aes(color = "BeachieCreek"), alpha = 0.9) +
+  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
+  scale_color_manual(
+    name = "Fire Name", 
+    values = c("LionsHead" = "red", "BeachieCreek" = "purple", "Riverside" = "yellow")
+  ) +
   labs(
-    title = "Zoomed-In View of Oregon Fires in 2020",
+    title = "Zoomed-In View of Oregon Santiam Fire in 2020",
     x = "Longitude",
     y = "Latitude"
   ) +
@@ -450,10 +456,8 @@ fire_bee_counts_df
 bee_in_buffer <- bee_counts %>%
   filter(!is.na(FireName))
 
-bee_in_buffer
-
 bee_species_in_buffer <- bee_in_buffer %>%
-  select(FireName, scientific_name, BurnBndLat, BurnBndLon)
+  select(FireName, scientific_name)
 
 # create a df
 bee_species_in_buffer_df <- as.data.frame(bee_species_in_buffer)
@@ -461,6 +465,7 @@ bee_species_in_buffer_df <- as.data.frame(bee_species_in_buffer)
 print(bee_species_in_buffer_df)
 
 bee_species_in_buffer_sf <- st_as_sf(bee_species_in_buffer_df)
+
 
  ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
@@ -470,7 +475,7 @@ bee_species_in_buffer_sf <- st_as_sf(bee_species_in_buffer_df)
   geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
   geom_sf(data = bee_species_in_buffer_sf, aes(color = "Blue"), size = 1, alpha = 0.9) +
   labs(
-    title = "Zoomed-In View of Oregon Fires in 2020",
+    title = "Bee observations from Observations file",
     x = "Longitude",
     y = "Latitude"
   ) +
@@ -479,5 +484,40 @@ bee_species_in_buffer_sf <- st_as_sf(bee_species_in_buffer_df)
     xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
     ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
   )
+ 
+ 
+
+```
+
+```{r}
+oba_df <- oba_clean[, c("GenusSpecies", "Associated.plant", "Dec..Long.", "Dec..Lat.", "Collection.Date")]
+
+oba_df_clean <- oba_df %>%
+  mutate(across(everything(), ~ na_if(trimws(.), ""))) %>%
+  drop_na()
+
+oba_df_clean
+
+
+oba_df_clean_sf <- st_as_sf(oba_df_clean, coords = c("Dec..Long.", "Dec..Lat."), crs = 4326)
+
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, color = "purple", alpha = 0.9) +
+  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
+  geom_sf(data = oba_df_clean_sf, aes(color = "Blue"), size = 1, alpha = 0.9) +
+  labs(
+    title = "Bee observations using OBA data from Lab 8",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf(
+    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
+    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
+  )
+ 
 
 ```
