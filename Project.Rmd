@@ -353,12 +353,26 @@ BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_2020
 
 Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
 
+# Set a common CRS 
+target_crs <- st_crs(4326)
+
+# Transform each fire to the target CRS
+LionsHead_sf <- st_transform(LionsHead_sf, target_crs)
+BeachieCreek_sf <- st_transform(BeachieCreek_sf, target_crs)
+Riverside_sf <- st_transform(Riverside_sf, target_crs)
+
+#check if they match
+print(st_crs(LionsHead_sf) == st_crs(BeachieCreek_sf))
+print(st_crs(BeachieCreek_sf) == st_crs(Riverside_sf))
+
+oregon_map_sf <- st_as_sf(oregon_map, coords = c("long", "lat"), crs = 4326)
+
 ggplot() +
-  #geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
-               #fill = "lightgrey", color = "white") +
-  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
-  geom_sf(data = BeachieCreek_sf, color = "Purple", alpha = 0.9) +
-  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, color = "Red", alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, color = "Red", alpha = 0.9) +
+  geom_sf(data = Riverside_sf, color = "Red", alpha = 0.9) +
   labs(
     title = "Distribution of Oregon Fires in 2020",
     x = "Longitude",
@@ -366,6 +380,31 @@ ggplot() +
   ) +
   theme_minimal() +
   coord_sf()
+
+#Now lets zoom in
+
+# merge all fires into one
+fire_combined_bbox <- st_bbox(rbind(LionsHead_sf, BeachieCreek_sf, Riverside_sf))
+
+# Adjust the margins 
+fire_combined_bbox <- fire_combined_bbox + c(-0.1, -0.1, 0.1, 0.1)  #(xmin, ymin, xmax, ymax)
+
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, color = "purple", alpha = 0.9) +
+  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
+  labs(
+    title = "Zoomed-In View of Oregon Fires in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf(
+    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
+    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
+  )
 ```
 
 ```{r}
@@ -411,12 +450,34 @@ fire_bee_counts_df
 bee_in_buffer <- bee_counts %>%
   filter(!is.na(FireName))
 
+bee_in_buffer
+
 bee_species_in_buffer <- bee_in_buffer %>%
-  select(FireName, scientific_name)
+  select(FireName, scientific_name, BurnBndLat, BurnBndLon)
 
 # create a df
 bee_species_in_buffer_df <- as.data.frame(bee_species_in_buffer)
 
 print(bee_species_in_buffer_df)
+
+bee_species_in_buffer_sf <- st_as_sf(bee_species_in_buffer_df)
+
+ ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, color = "purple", alpha = 0.9) +
+  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
+  geom_sf(data = bee_species_in_buffer_sf, aes(color = "Blue"), size = 1, alpha = 0.9) +
+  labs(
+    title = "Zoomed-In View of Oregon Fires in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf(
+    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
+    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
+  )
 
 ```
