@@ -19,7 +19,7 @@ Cleaning Oregon Bee Atlas data
 ```{r}
 # Load in Oregon Bee Atlas data
 
-oba <- read.csv("data/OBA_2018-2023.csv")
+oba <- read.csv("project/data/OBA_2018-2023.csv") 
 head(oba)
 ```
 Using regular expressions to clean the species column of the OBA dataset.
@@ -145,7 +145,7 @@ key_species
 
 
 ```{r}
-all_fires <- read.csv("data/fire_data_2000-2020.csv")
+all_fires <- read.csv("project/data/fire_data_2000-2020.csv")
 
 head(all_fires)
 all_fires_df <- all_fires[, c("FireName", "FireYear","Size_class","EstTotalAcres", "Long_DD", "Lat_DD")]
@@ -180,7 +180,7 @@ head(all_fires_sf)
 Loading in the data, and building a data frame with only the columns we need. I also removed any fires that didnt have any cords, mainly just line 165.
 ```{r load and build df}
 # Load the data as Fires
-Fires <- read.csv("data/fire_data.csv")
+Fires <- read.csv("project/data/fire_data.csv")
 head(Fires)
 
 # Check column names
@@ -259,7 +259,7 @@ Loaded the bee obervations, this is from all the years, the entire data set I th
 # Now lets add The bee data
 
 #reads in the OBA bee obvercation data
-Bee_Observations <- read.csv("data/observations-501373.csv")
+Bee_Observations <- read.csv("project/data/observations-501373.csv")
 Bee_Observations
 
 #create a data frame
@@ -347,11 +347,11 @@ print(result_df)
 
 
 ```{r}
-LionsHead_sf <- read_sf("data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
+LionsHead_sf <- read_sf("project/data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
 
-BeachieCreek_sf <- read_sf("data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
+BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
 
-Riverside_sf <- read_sf("data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
+Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
 
 ggplot() +
   #geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
@@ -369,7 +369,7 @@ ggplot() +
 ```
 
 ```{r}
-#Now its time to go fire by fire and determin how many bee observations are present in a 6km radius of the fire origin
+#Now its time to go fire by fire and determine how many bee observations are present in a 6km radius of the fire origin
 
 # create a 6 km buffer around each fire
 LionsHead_buffer <- st_buffer(LionsHead_sf, dist = 6000)  # 6000 meters = 6 km
@@ -405,3 +405,18 @@ fire_bee_counts_df <- as.data.frame(fire_bee_counts)
 fire_bee_counts_df
 ```
 
+```{r, subset data}
+
+# Filter bee observations that are in the fire buffer
+bee_in_buffer <- bee_counts %>%
+  filter(!is.na(FireName))
+
+bee_species_in_buffer <- bee_in_buffer %>%
+  select(FireName, scientific_name)
+
+# create a df
+bee_species_in_buffer_df <- as.data.frame(bee_species_in_buffer)
+
+print(bee_species_in_buffer_df)
+
+```
