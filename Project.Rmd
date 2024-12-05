@@ -19,8 +19,6 @@ Cleaning Oregon Bee Atlas data
 ```{r}
 # Load in Oregon Bee Atlas data
 
-#kldfjkfajsldk
-
 oba <- read.csv("project/data/OBA_2018-2023.csv") 
 head(oba)
 nrow(oba)
@@ -153,8 +151,6 @@ sum(is.na(oba$Dec..Long.))
 
 nrow(oba)
 ```
-
-
 Loading in the data, and building a data frame with only the columns we need. I also removed any fires that didnt have any cords, mainly just line 165.
 ```{r, Oregon Map}
 # Load Oregon county map data
@@ -186,11 +182,11 @@ ggplot() +
 
 
 ```{r}
-LionsHead_sf <- read_sf("data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
+LionsHead_sf <- read_sf("project/data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
 
-BeachieCreek_sf <- read_sf("data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
+BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
 
-Riverside_sf <- read_sf("data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
+Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
 
 # Set a common CRS 
 target_crs <- st_crs(4326)
@@ -247,31 +243,7 @@ ggplot() +
 ```
 
 ```{r}
-#Now its time to go fire by fire and determine how many bee observations are present in a 6km radius of the fire origin
 
-# create a 6 km buffer around each fire
-LionsHead_buffer <- st_buffer(LionsHead_sf, dist = 6000)  # 6000 meters = 6 km
-BeachieCreek_buffer <- st_buffer(BeachieCreek_sf, dist = 6000)
-Riverside_buffer <- st_buffer(Riverside_sf, dist = 6000)
-
-# Create a fire name column for each fire 
-LionsHead_buffer$FireName <- "LionsHead"
-BeachieCreek_buffer$FireName <- "BeachieCreek"
-Riverside_buffer$FireName <- "Riverside"
-
-# Join fires into one fire region
-all_fire_buffer <- rbind(LionsHead_buffer, BeachieCreek_buffer, Riverside_buffer)
-
-print(crs(all_fire_buffer) == crs(oba_observations_sf))
-
-# Transform bee observations to the crs of the fire buffer
-oba_observations_sf <- st_transform(oba_observations_sf, crs(all_fire_buffer))
-
-# Check if the transformation worked
-print(crs(all_fire_buffer) == crs(oba_observations_sf))
-
-# spatial join to find bee observations within the fire buffer
-bee_counts <- st_join(oba_observations_sf, all_fire_buffer, join = st_intersects)
 
 # Count bee observations per fire
 fire_bee_counts <- bee_counts %>%
@@ -280,26 +252,22 @@ fire_bee_counts <- bee_counts %>%
 
 #create df
 fire_bee_counts_df <- as.data.frame(fire_bee_counts)
-fire_bee_counts_df
+head(fire_bee_counts_df)
+
+fire_bee_counts_sf <- st_as_sf(fire_bee_counts_df)
+
+all_fire_boarder <- rbind(LionsHead_sf, BeachieCreek_sf, Riverside_sf)
+
+crs(all_fire_buffer, proj = TRUE) == crs(fire_bee_counts_sf, proj = TRUE)
+
+only_fire_bees <- st_intersection(oba_observations_sf, all_fire_boarder)
+head(only_fire_bees)
+
+
+
 ```
 
 ```{r, subset data}
-
-# Filter bee observations that are in the fire buffer
-bee_in_buffer <- bee_counts %>%
-  filter(!is.na(FireName))
-
-bee_in_buffer
-
-bee_species_in_buffer <- bee_in_buffer %>%
-  select(FireName, scientific_name, BurnBndLat, BurnBndLon)
-
-# create a df
-bee_species_in_buffer_df <- as.data.frame(bee_species_in_buffer)
-
-print(bee_species_in_buffer_df)
-
-bee_species_in_buffer_sf <- st_as_sf(bee_species_in_buffer_df)
 
  ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
@@ -307,7 +275,7 @@ bee_species_in_buffer_sf <- st_as_sf(bee_species_in_buffer_df)
   geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
   geom_sf(data = BeachieCreek_sf, color = "purple", alpha = 0.9) +
   geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
-  geom_sf(data = oba_observations_sf, aes(color = "Blue"), size = 1, alpha = 0.9) +
+  geom_sf(data = only_fire_bees, aes(color = "Blue"), size = 1, alpha = 0.9) +
   labs(
     title = "Zoomed-In View of Oregon Fires in 2020",
     x = "Longitude",
