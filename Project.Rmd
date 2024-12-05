@@ -268,13 +268,12 @@ only_fire_bees_df <- as.data.frame(only_fire_bees)
 only_fire_bees_df$GenusSpecies <- paste(only_fire_bees_df$Genus, only_fire_bees_df$Species)
 
 #create a subset
-final_oba_df <- only_fire_bees_df %>% select("Collection.Date", "GenusSpecies","Associated.plant...genus..species", "BurnBndLat", "BurnBndLon",)
+final_oba_df <- only_fire_bees_df %>% select("Year.1", "GenusSpecies","Associated.plant...genus..species", "BurnBndLat", "BurnBndLon",)
 
 final_oba_df
 
 
 ```
-
 ```{r, subset data}
 
  ggplot() +
@@ -295,4 +294,22 @@ final_oba_df
     ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
   )
 
+```
+
+Add a site status column (before and after fire)
+```{r,}
+# Initialize an empty site status column
+final_oba_df$Site.status <- NA
+
+# Loop through the oba data frame
+for (i in 1:nrow(final_oba_df)) {
+  if (final_oba_df$Year.1[i] <= 2020) {
+    final_oba_df$Site.status[i] <- "Before"
+  }
+  else {
+    final_oba_df$Site.status[i] <- "After"
+  }
+}
+
+head(final_oba_df)
 ```
