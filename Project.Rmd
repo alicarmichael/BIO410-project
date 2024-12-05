@@ -230,9 +230,13 @@ fire_combined_bbox <- fire_combined_bbox + c(-0.1, -0.1, 0.1, 0.1)  #(xmin, ymin
 ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
                fill = "lightgrey", color = "white") +
-  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
-  geom_sf(data = BeachieCreek_sf, color = "purple", alpha = 0.9) +
-  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
+  geom_sf(data = LionsHead_sf, aes(color = "Lions Head"), alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, aes(color = "Beachie Creek"), alpha = 0.9) +
+  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
+  scale_color_manual(
+    name = "Fires",
+    values = c("Lions Head" = "red", "Beachie Creek" = "purple", "Riverside" = "yellow")
+  ) +
   labs(
     title = "Zoomed-In View of Oregon Fires in 2020",
     x = "Longitude",
@@ -281,12 +285,21 @@ final_oba_df
  ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
                fill = "lightgrey", color = "white") +
-  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
-  geom_sf(data = BeachieCreek_sf, color = "purple", alpha = 0.9) +
-  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
-  geom_sf(data = only_fire_bees, aes(color = "Blue"), size = 1, alpha = 0.9) +
+  geom_sf(data = LionsHead_sf, aes(color = "Lions Head"), alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, aes(color = "Beachie Creek"), alpha = 0.9) +
+  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
+  geom_sf(data = only_fire_bees, aes(color = "Bee Observation"), size = 1, alpha = 0.9) +
+  scale_color_manual(
+    name = "Key",
+    values = c(
+      "Lions Head" = "red",
+      "Beachie Creek" = "purple",
+      "Riverside" = "Dark Green",
+      "Bee Observation" = "blue"
+    )
+  ) +
   labs(
-    title = "Zoomed-In View of Oregon Fires in 2020",
+    title = "Oregon Santiam Fire in 2020",
     x = "Longitude",
     y = "Latitude"
   ) +
