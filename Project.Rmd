@@ -377,62 +377,129 @@ sankey_before
 Now we want to calculate some statistics to simualte. We want to calculate the species richness before
 and after the fires and then take the difference in richness for both plants and bees.
 ```{r}
-#richness for bees
+# Richness for bees
 Bee_richness_before <- length(unique(final_oba_df$Bee.genus[final_oba_df$Site.status == "Before"]))
 Bee_richness_after <- length(unique(final_oba_df$Bee.genus[final_oba_df$Site.status == "After"]))
-Bee_richness_change <- Bee_richness.after - Bee_richness.before
+Bee_richness_change <- Bee_richness_after - Bee_richness_before
 
-#richness for plants
+# Richness for plants
 Plant_richness_before <- length(unique(final_oba_df$Plant.genus[final_oba_df$Site.status == "Before"]))
 Plant_richness_after <- length(unique(final_oba_df$Plant.genus[final_oba_df$Site.status == "After"]))
 Plant_richness_change <- Plant_richness_after - Plant_richness_before
 ```
 
-Now we will conduct our simulation using A/B testing.
+Now we will conduct our simulation using bootstrapping. Our sample size for our "after" group is really small 
+so we will use resampling and then a density histogram to simulate what our hypothesis could look
+like if there was more data available.
 ```{r}
-# Shuffle the labels of the Site.status column
-shuffled_status <- sample(final_oba_df$Site.status)
+# Observed difference in richness
+bee_observed_diff <- Bee_richness_after - Bee_richness_before
 
-# Make a new shuffled labels column to our data set
-final_oba_df$Shuffled.status <- shuffled_status
+# Resampling procedure because our "after" group is extremmely small
+set.seed(42)  # Set a seed for reproducibility
+num_iterations <- 10000  # Increase iterations for a larger distribution
 
-# Simulate the statistics above with the shuffled labels for the bees
-null_simulation_bee <- replicate(1000,{
+# Perform simulation with shuffled Site.status
+bee_null_distribution <- replicate(num_iterations, {
+  # Shuffle Site.status
   shuffled_status <- sample(final_oba_df$Site.status)
-  Richness_before_bees <- length(unique(final_oba_df$Bee.genus[final_oba_df$shuffled.status == "Before"]))
-  Richness_after_bees <- length(unique(final_oba_df$Bee.genus[final_oba_df$shuffled.status == "After"]))
-  Richness_after_bees - Richness_before_bees
   
+  # Assign the shuffled status to a new column
+  final_oba_df$Shuffled.status <- shuffled_status
+  
+  # Sample from the shuffled "Before" and "After" groups
+  bee_sampled_before <- final_oba_df$Bee.genus[final_oba_df$Shuffled.status == "Before"]
+  bee_sampled_after <- final_oba_df$Bee.genus[final_oba_df$Shuffled.status == "After"]
+  
+  # Calculate richness
+  bee_richness_before <- length(unique(bee_sampled_before))
+  bee_richness_after <- length(unique(bee_sampled_after))
+  
+  # Return the difference in richness
+  bee_richness_after - bee_richness_before
 })
 
-# Create our observed value using the richness change calculated above
-observed <- Bee_richness_change
+# Compare observed difference with null distribution
+p_value <- mean(abs(bee_null_distribution) >= abs(observed_diff))
+print(paste("p-value: ", p_value))
 
-# Calculate our p_value simualted under the null hypothesis
-p_value <- mean(null_simulation_bee >= observed)
-print(p_value)
+# Plot the null distribution
+bee_null_df <- data.frame(bee_null_distribution)
+
+ggplot(bee_null_df, aes(x = bee_null_distribution)) +
+  geom_density(fill = "lightblue", alpha = 0.7) +
+  geom_vline(aes(xintercept = bee_observed_diff), color = "red", linetype = "dashed", size = 1) +
+  labs(title = "Null Distribution of Bee Species Richness",
+       x = "Difference in Richness",
+       y = "Density") +
+  theme_minimal() +
+   theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+#ggsave("simulated_bee_species_richness.png", 
+       #plot = bee_plot,
+       #dpi = 300,
+       #units = "in",
+      #bg = "white")
 ```
 
 Here we conduct our simulation for the plants.
 ```{r}
-# Shuffle the labels of the Site.status column
-shuffled_status <- sample(final_oba_df$Site.status)
+# Observed difference in richness
+plant_observed_diff <- Plant_richness_after - Plant_richness_before
 
-# Make a new shuffled labels column to our data set
-final_oba_df$Shuffled.status <- shuffled_status
+# Resampling procedure because our "after" group is extremmely small
+set.seed(42)  # Set a seed for reproducibility
+num_iterations <- 10000  # Increase iterations for a larger distribution
 
-# Simulate the statistics above with the shuffled labels for the plants
-null_simulation_plant <- replicate(1000,{
+# Perform simulation with shuffled Site.status
+plant_null_distribution <- replicate(num_iterations, {
+  # Shuffle Site.status
   shuffled_status <- sample(final_oba_df$Site.status)
-  Richness_before_plants <- length(unique(final_oba_df$Plant.genus[final_oba_df$shuffled.status == "Before"]))
-  Richness_after_plants <- length(unique(final_oba_df$Plant.genus[final_oba_df$shuffled.status == "After"]))
-  Richness_after_plants - Richness_before_plants
   
+  # Assign the shuffled status to a new column
+  final_oba_df$Shuffled.status <- shuffled_status
+  
+  # Sample from the shuffled "Before" and "After" groups
+  plant_sampled_before <- final_oba_df$Plant.genus[final_oba_df$Shuffled.status == "Before"]
+  plant_sampled_after <- final_oba_df$Plant.genus[final_oba_df$Shuffled.status == "After"]
+  
+  # Calculate richness
+  plant_richness_before <- length(unique(plant_sampled_before))
+  plant_richness_after <- length(unique(plant_sampled_after))
+  
+  # Return the difference in richness
+  plant_richness_after - plant_richness_before
 })
 
-observed <- Plant_richness_change
-p_value <- mean(null_simulation_plant  >= observed)
-print(p_value)
+# Compare observed difference with null distribution
+p_value <- mean(abs(plant_null_distribution) >= abs(observed_diff))
+print(paste("p-value: ", p_value))
+
+# Plot the null distribution
+plant_null_df <- data.frame(plant_null_distribution)
+ggplot(plant_null_df, aes(x = plant_null_distribution)) +
+  geom_density(fill = "lightblue", alpha = 0.7) +
+  geom_vline(aes(xintercept = plant_observed_diff), color = "red", linetype = "dashed", size = 1) +
+  labs(title = "Null Distribution of Plant Species Richness",
+       x = "Difference in Richness",
+       y = "Density") +
+  theme_minimal() +
+   theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+#ggsave("simulated_plant_species_richness.png", 
+       #dpi = 300,
+       #units = "in",
+      #bg = "white")
 ```
 
 Species interaction network for after the fires.
