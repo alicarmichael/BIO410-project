@@ -243,8 +243,6 @@ ggplot() +
 ```
 
 ```{r}
-
-
 # Count bee observations per fire
 fire_bee_counts <- bee_counts %>%
   group_by(FireName) %>%  # Group by fire name or another identifier
@@ -254,15 +252,25 @@ fire_bee_counts <- bee_counts %>%
 fire_bee_counts_df <- as.data.frame(fire_bee_counts)
 head(fire_bee_counts_df)
 
+#convert to sf
 fire_bee_counts_sf <- st_as_sf(fire_bee_counts_df)
 
+#Merge all fires into one object
 all_fire_boarder <- rbind(LionsHead_sf, BeachieCreek_sf, Riverside_sf)
 
-crs(all_fire_buffer, proj = TRUE) == crs(fire_bee_counts_sf, proj = TRUE)
-
+#Create a subset of obersvations inside the border
 only_fire_bees <- st_intersection(oba_observations_sf, all_fire_boarder)
 head(only_fire_bees)
 
+only_fire_bees_df <- as.data.frame(only_fire_bees)
+
+#merges genus and species and makes a new column
+only_fire_bees_df$GenusSpecies <- paste(only_fire_bees_df$Genus, only_fire_bees_df$Species)
+
+#create a subset
+final_oba_df <- only_fire_bees_df %>% select("Collection.Date", "GenusSpecies","Associated.plant...genus..species", "BurnBndLat", "BurnBndLon",)
+
+final_oba_df
 
 
 ```
