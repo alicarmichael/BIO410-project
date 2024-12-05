@@ -1,0 +1,50 @@
+---
+title: "CORTES_ProjectTopic.Rmd"
+author: "Vincent Cortes"
+date: "2024-10-25"
+output: pdf_document
+---
+
+**General topic of interest in relation to the Oregon Bee Atlas data (e.g., patterns of diversity, bee diets, sampling bias)**
+
+I would want to pursue a topic surrounding bee diversity in different habitats like Coastal regions vs inland or comparing forests, grasslands/plains, and urban environments. 
+
+Another Idea I had was to see how invasive plant species affect bee population and richness compared to non-invasive plant species.
+
+**Potential questions within that topic area**
+
+1.a What habitats foster a better environment to allow a wide variety of species to thrive?
+
+
+2.a Do invasive plant species harm bee populations, if so what species of bee are most affected by this?
+	
+2.b What invasive plant species cause the most harm to bee diversity?
+
+
+**Potential additional datasets within that topic area (e.g.,specify relevant government databases, academic data repositories, etc)**
+
+**Oregon Bee Atlas:** Has data on bee populations, along with metadata surrounding location and plants nearby.
+
+**iNaturalist Database:** Full of bee and plant sightings that could complement observations from the OBA data.
+
+**USDA Plant Hardiness Zone Maps:** This could be used to understand the climatic conditions in different regions of Oregon (coastal vs. inland).
+
+**Oregon Spatial Data Library:** Good data on land cover, elevation, and habitat types (forests, grasslands, urban environments).
+
+**Global Biodiversity Information Facility:** To get additional records on species distributions of Oregon-specific pollinators.
+
+**NOAA Climate Data:** To examine climate variables like temperature and precipitation in different regions. Useful to compare coastal to inland.
+
+**Land Use and Cover Data:** Also good for land cover in coastal, forest, grassland, and urban areas.
+
+**USDA PLANTS Database:** Has data on invasive plant species 
+
+**Oregon Invasive Species Council:** Provides detailed data on invasive species in the state.
+
+**Calflora Database:** More data on invasive and non-invasive plant species across the western United States.
+
+**Oregon State University Extension:** 
+
+**The name of your partner (if undergrads)**
+
+ I don’t have a partner at the moment.

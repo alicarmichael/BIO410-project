@@ -14,14 +14,17 @@ library(ggspatial)
 library(plotly)
 library(knitr)
 library(stringr)
+library(tidyr)
 ```
 Cleaning Oregon Bee Atlas data
 ```{r}
 # Load in Oregon Bee Atlas data
-
 oba <- read.csv("data/OBA_2018-2023.csv") 
 head(oba)
 nrow(oba)
+oba <- read.csv("project/data/OBA_2018-2023.csv") 
+head(oba)
+
 ```
 Using regular expressions to clean the species column of the OBA dataset.
 ```{r}
@@ -150,11 +153,23 @@ sum(is.na(oba$Dec..Lat.))
 sum(is.na(oba$Dec..Long.))
 
 nrow(oba)
+oba
+#oba$GenusSpecies
+```
+
+```{r}
+key_species <- oba %>%
+  filter(Year.1 >= 2018 & Year.1 <= 2022) %>%
+  group_by(Species, Year.1) %>%
+  summarize(Frequency = n(), .groups = "drop")
+
+key_species
 ```
 
 
 ```{r}
 all_fires <- read.csv("data/fire_data_2000-2020.csv")
+all_fires <- read.csv("project/data/fire_data_2000-2020.csv")
 
 head(all_fires)
 all_fires_df <- all_fires[, c("FireName", "FireYear","Size_class","EstTotalAcres", "Long_DD", "Lat_DD")]
@@ -190,6 +205,7 @@ Loading in the data, and building a data frame with only the columns we need. I 
 ```{r load and build df}
 # Load the data as Fires
 Fires <- read.csv("data/fire_data.csv")
+Fires <- read.csv("project/data/fire_data.csv")
 head(Fires)
 
 # Check column names
@@ -249,6 +265,7 @@ Large_2020_fires <- firedata_2020_new %>%
   filter(Size_class == 7)
 
 oba_observations_sf <- st_as_sf(oba, coords = c("Dec..Lat.", "Dec..Long."), crs = 4326)
+Large_2020_fires_sf <- st_as_sf(Large_2020_fires, coords = c("Long_DD", "Lat_DD"), crs = 4326)
 
 ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
@@ -269,11 +286,13 @@ Loaded the bee obervations, this is from all the years, the entire data set I th
 
 #reads in the OBA bee obvercation data
 Bee_Observations <- read.csv("data/observations-501373.csv")
+Bee_Observations <- read.csv("project/data/observations-501373.csv")
 Bee_Observations
 
 #create a data frame
 bee_observations_df <- Bee_Observations[, c("scientific_name","longitude", "latitude", "quality_grade")]
 bee_observations_df
+
 #turns data frame into sf
 bee_observations_sf <- st_as_sf(bee_observations_df, coords = c("longitude", "latitude"), crs = 4326)
 print(bee_observations_sf)
@@ -291,6 +310,7 @@ ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
                fill = "lightgrey", color = "white") +
   geom_sf(data = oba_observations_sf, aes(color ="blue"), size = .1, alpha = 0.9) +
+  geom_sf(data = bee_observations_sf, aes(color ="blue"), size = .1, alpha = 0.9) +
   labs(title = "Bee Species Observations in Oregon",
        x = "Longitude", 
        y = "Latitude") +
@@ -366,6 +386,11 @@ LionsHead_sf <- read_sf("data/LionsHead/or4472312167920200817_20200810_20210810_
 BeachieCreek_sf <- read_sf("data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
 
 Riverside_sf <- read_sf("data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
+LionsHead_sf <- read_sf("project/data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
+
+BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
+
+Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
 
 # Set a common CRS 
 target_crs <- st_crs(4326)
@@ -389,6 +414,7 @@ ggplot() +
   geom_sf(data = Riverside_sf, color = "Red", alpha = 0.9) +
   labs(
     title = "Distribution of Oregon Fires in 2020",
+    title = "Location of Oregon's 2020 Santiam Fire",
     x = "Longitude",
     y = "Latitude"
   ) +
@@ -411,6 +437,15 @@ ggplot() +
   geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
   labs(
     title = "Zoomed-In View of Oregon Fires in 2020",
+  geom_sf(data = LionsHead_sf, aes(color = "LionsHead"), alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, aes(color = "BeachieCreek"), alpha = 0.9) +
+  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
+  scale_color_manual(
+    name = "Fire Name", 
+    values = c("LionsHead" = "red", "BeachieCreek" = "purple", "Riverside" = "yellow")
+  ) +
+  labs(
+    title = "Zoomed-In View of Oregon Santiam Fire in 2020",
     x = "Longitude",
     y = "Latitude"
   ) +
@@ -447,6 +482,16 @@ print(crs(all_fire_buffer) == crs(oba_observations_sf))
 
 # spatial join to find bee observations within the fire buffer
 bee_counts <- st_join(oba_observations_sf, all_fire_buffer, join = st_intersects)
+print(crs(all_fire_buffer) == crs(bee_observations_sf))
+
+# Transform bee observations to the crs of the fire buffer
+bee_observations_sf <- st_transform(bee_observations_sf, crs(all_fire_buffer))
+
+# Check if the transformation worked
+print(crs(all_fire_buffer) == crs(bee_observations_sf))
+
+# spatial join to find bee observations within the fire buffer
+bee_counts <- st_join(bee_observations_sf, all_fire_buffer, join = st_intersects)
 
 # Count bee observations per fire
 fire_bee_counts <- bee_counts %>%
@@ -463,11 +508,13 @@ fire_bee_counts_df
 # Filter bee observations that are in the fire buffer
 bee_in_buffer <- bee_counts %>%
   filter(!is.na(FireName))
-
+  
 bee_in_buffer
 
 bee_species_in_buffer <- bee_in_buffer %>%
   select(FireName, scientific_name, BurnBndLat, BurnBndLon)
+bee_species_in_buffer <- bee_in_buffer %>%
+  select(FireName, scientific_name)
 
 # create a df
 bee_species_in_buffer_df <- as.data.frame(bee_species_in_buffer)
@@ -485,6 +532,34 @@ bee_species_in_buffer_sf <- st_as_sf(bee_species_in_buffer_df)
   geom_sf(data = oba_observations_sf, aes(color = "Blue"), size = 1, alpha = 0.9) +
   labs(
     title = "Zoomed-In View of Oregon Fires in 2020",
+  geom_sf(data = bee_species_in_buffer_sf, aes(color = "Blue"), size = 1, alpha = 0.9) +
+  labs(
+    title = "Bee observations from Observations file",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf(
+    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
+    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
+  )
+```
+
+```{r}
+
+
+
+oba_sf <- st_as_sf(oba, coords = c("Dec..Long.", "Dec..Lat."), crs = 4326)
+
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, color = "purple", alpha = 0.9) +
+  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
+  geom_sf(data = oba_sf, aes(color = "Blue"), size = 1, alpha = 0.9) +
+  labs(
+    title = "Bee observations using OBA data from Lab 8",
     x = "Longitude",
     y = "Latitude"
   ) +

@@ -1,0 +1,245 @@
+---
+title: "Project"
+author: "Vincent Cortes"
+date: "2024-11-19"
+output: pdf_document
+---
+```{r load packs}
+library(terra)
+library(ggplot2)
+library(dplyr)
+library(sf)
+library(maps)
+library(ggspatial)
+library(plotly)
+```
+
+
+```{r}
+all_fires <- read.csv("data/fire_data_2000-2020.csv")
+
+head(all_fires)
+all_fires_df <- all_fires[, c("FireName", "FireYear","Size_class","EstTotalAcres", "Long_DD", "Lat_DD")]
+head(all_fires_df)
+
+#filters only 2020 fires
+firedata_2020 <- all_fires_df %>%
+  filter(FireYear == 2020)
+
+#remove line for missing 
+firedata_2020_new <- firedata_2020[-447,]
+
+#convert from factor to character 
+firedata_2020_new$Size_class <- as.character(firedata_2020_new$Size_class)
+
+#convert A, B, etc to 1, 2, 3, 4
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "A"] <- "1"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "B"] <- "2"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "C"] <- "3"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "D"] <- "4"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "E"] <- "5"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "F"] <- "6"
+firedata_2020_new$Size_class[firedata_2020_new$Size_class == "G"] <- "7"
+#change them back to a factor
+firedata_2020_new$Size_class <- as.factor(firedata_2020_new$Size_class)
+
+
+all_fires_sf <- st_as_sf(firedata_2020_new, coords = c("Long_DD", "Lat_DD"), crs = 4326)
+
+head(all_fires_sf)
+```
+Loading in the data, and building a data frame with only the columns we need. I also removed any fires that didnt have any cords, mainly just line 165.
+```{r load and build df}
+# Load the data as Fires
+Fires <- read.csv("data/fire_data.csv")
+head(Fires)
+
+# Check column names
+colnames(Fires)
+
+# Select specific columns
+fire_data_df <- Fires[, c("FireName", "FinalFireSizeAcres", "Longitude", "Latitude", "LandClass","SizeClass")]
+
+fire_data_df
+#Remove fire with no cords
+fire_data_newdf <- fire_data_df[-165,]
+
+# converts the fire data frame to a sf
+fire_data_sf <- st_as_sf(fire_data_newdf, coords = c("Longitude", "Latitude"), crs = 4326)
+print(fire_data_sf)
+
+# Load Oregon county map data
+oregon_map <- map_data("county", "oregon") %>% 
+  select(long, lat, group, id = subregion)  # Correct column name is `region`
+
+```
+
+Plotting the fires based on how many acres they burned
+```{r plot graph}
+# Load Oregon county map data
+oregon_map <- map_data("county", "oregon") %>% 
+  select(long, lat, group, id = subregion)  # Correct column name is `region`
+
+# Plot Oregon map with all fires
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = fire_data_sf, aes(color = SizeClass), size = fire_data_sf$SizeClass, alpha = 0.9) +
+  scale_color_gradient(low = "yellow", high = "red", name = "Fire Size Class") + # Adjust the colors
+  labs(title = "Distribution of Oregon Fires in 2020",
+       x = "Longitude", 
+       y = "Latitude") +
+  theme_minimal() +
+  coord_sf()
+
+
+# Plot Oregon map with all fires
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = all_fires_sf, aes(color = Size_class), size = all_fires_sf$Size_class, alpha = 0.9) +
+  labs(title = "Distribution of Oregon Fires in 2020",
+       x = "Longitude", 
+       y = "Latitude") +
+  theme_minimal() +
+  coord_sf()
+
+Large_2020_fires_sf
+```
+```{r}
+Large_2020_fires <- firedata_2020_new %>%
+  filter(Size_class == 7)
+
+Large_2020_fires_sf <- st_as_sf(Large_2020_fires, coords = c("Long_DD", "Lat_DD"), crs = 4326)
+
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = Large_2020_fires_sf, aes(color = Size_class), size = Large_2020_fires_sf$Size_class, alpha = 0.9) +
+  labs(title = "Distribution of Oregon Fires in 2020 with level 7",
+       x = "Longitude", 
+       y = "Latitude") +
+  theme_minimal() +
+  coord_sf()
+
+Large_2020_fires_sf
+```
+
+Loaded the bee obervations, this is from all the years, the entire data set I think. I created a dataframe with only the columns we need.
+```{r add be data}
+# Now lets add The bee data
+
+#reads in the OBA bee obvercation data
+Bee_Observations <- read.csv("data/observations-501373.csv")
+Bee_Observations
+
+#create a data frame
+bee_observations_df <- Bee_Observations[, c("scientific_name","longitude", "latitude", "quality_grade")]
+
+#turns data frame into sf
+bee_observations_sf <- st_as_sf(bee_observations_df, coords = c("longitude", "latitude"), crs = 4326)
+print(bee_observations_sf)
+```
+
+Plotted the bee observations so we can see what areas arent reached by OBA.
+```{r graph bee data}
+#plot bee observations on to oregon map with fires
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = bee_observations_sf, aes(color ="blue"), size = .1, alpha = 0.9) +
+  labs(title = "Bee Species Observations in Oregon",
+       x = "Longitude", 
+       y = "Latitude") +
+  theme_minimal() +
+  coord_sf()
+
+```
+Plooted both so maybe we can pick fires that have alot ob obervations.
+```{r plot fire and bee}
+#plot that show Distribution of fires and bee observations
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = fire_data_sf, aes(color = SizeClass), size = fire_data_sf$SizeClass, alpha = 0.9) +
+  scale_color_gradient(low = "yellow", high = "red", name = "Fire Size Class") + # Adjust the colors
+  geom_sf(data = bee_observations_sf, color= "blue", size = .1, alpha = 0.3) +
+  labs(title = "Distribution of fires and bee observations",
+       x = "Longitude", 
+       y = "Latitude") +
+  theme_minimal() +
+  coord_sf()
+```
+
+Created a 1km buffer around each fire and counted how many bee obervations occured in that buffer.
+```{r}
+#Now its time to go fire by fire and determin how many bee observations are present in a 1km radius of the fire origin
+
+# create a 1 km buffer around each fire point
+fire_buffers <- st_buffer(fire_data_sf, dist = 1000)  # 1000 meters = 1 km
+
+# spatial join to find bee observations within each buffer
+bee_counts <- st_join(fire_buffers, bee_observations_sf, join = st_intersects)
+
+# Count bee observations per fire
+fire_bee_counts <- bee_counts %>%
+  group_by(FireName) %>%  # Group by fire name or another identifier
+  summarize(BeeCount = n())  # Counts the number of bee observations
+
+#create df
+fire_bee_counts_df <- as.data.frame(fire_bee_counts)
+fire_bee_counts_df
+
+#list the top 10 fires with the most bee observations
+top_fires <- bee_counts %>%
+  group_by(FireName) %>%  # group by fire name 
+  summarize(BeeCount = n()) %>%  # count the number of bee observations
+  arrange(desc(BeeCount)) %>%  # now sort by BeeCount in descending order
+  slice_head(n = 10)  # then select the top 10 fires
+```
+Found the fires with the top 10 bee obervations, but some of these fires are very small.
+```{r}
+# View the top 10 fires
+print(top_fires)
+
+top_fires_sf <- st_as_sf(top_fires, coords = c("longitude", "latitude"), crs = 4326)
+print(top_fires_sf)
+```
+
+Added the bee counts to the original df
+```{r merge the two df}
+#left join based on the FireName column
+result_df <- fire_data_newdf %>%
+  left_join(fire_bee_counts_df %>% select(FireName, BeeCount), by = "FireName")
+
+print(result_df)
+
+```
+
+
+```{r}
+LionsHead_sf <- read_sf("data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
+
+BeachieCreek_sf <- read_sf("data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
+
+Riverside_sf <- read_sf("data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
+
+ggplot() +
+  #geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+              # fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, color = "red", alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, color = "Purple", alpha = 0.9) +
+  geom_sf(data = Riverside_sf, color = "yellow", alpha = 0.9) +
+  labs(
+    title = "Distribution of Oregon Fires in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf()
+
+
+
+
+
+```
