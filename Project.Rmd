@@ -14,6 +14,9 @@ library(ggspatial)
 library(plotly)
 library(knitr)
 library(stringr)
+library(vegan)
+library(igraph)
+library(networkD3)
 ```
 Cleaning Oregon Bee Atlas data
 ```{r}
@@ -266,7 +269,6 @@ only_fire_bees_df <- as.data.frame(only_fire_bees)
 
 #merges genus and species and makes a new column
 only_fire_bees_df$GenusSpecies <- paste(only_fire_bees_df$Genus, only_fire_bees_df$Species)
-
 #create a subset
 final_oba_df <- only_fire_bees_df %>% select("Year.1", "GenusSpecies","Associated.plant...genus..species", "BurnBndLat", "BurnBndLon",)
 
@@ -296,8 +298,98 @@ final_oba_df
 
 ```
 
-Add a site status column (before and after fire)
-```{r,}
+Remove the blanks
+```{r}
+#removed blanks
+final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
+final_oba_df <- final_oba_df[final_oba_df$GenusSpecies != " ",]
+is.na(final_oba_df)
+final_oba_df
+```
+```{r}
+## Remove the special character
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "\x92", "")
+
+# Removing blanks
+final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
+
+# Removing "net"
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "net", "")
+
+# Removing yarrow
+final_oba_df$Associated.plant...genus..species[final_oba_df$Associated.plant...genus..species == "Yarrow"] <- "Achillea millefollium"
+
+# Removing non plant
+final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "Weedy yellow comp.",]
+
+# Removing common names in ()
+final_oba_df$Associated.plant...genus..species <- gsub("\\s*\\(.*?\\)", "", final_oba_df$Associated.plant...genus..species)
+
+# Removing weird words
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, ",.*$", "")
+
+# Removing space
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "\\s+$", "")
+
+# Removing "sp."
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, " sp$", " sp.")
+
+# Removing "or"
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, " or .*", "")
+
+# Removing lists
+final_oba_df <- final_oba_df[!grepl(",", final_oba_df$Associated.plant...genus..species),]
+
+head(final_oba_df)
+```
+
+Cleaning the final_oba_df
+```{r}
+final_oba_df$Plant.resolution <- NA
+final_oba_df$Bee.resolution <- NA
+
+for (i in 1:nrow(final_oba_df)) {
+  if (str_count(final_oba_df$Associated.plant...genus..species[i], "\\S+") == 1) {
+    final_oba_df$Plant.resolution[i] <- "Genus"
+  }
+  else {
+    final_oba_df$Plant.resolution[i] <- "Species"
+  }
+}
+
+for (i in 1:nrow(final_oba_df)) {
+  if (str_count(final_oba_df$GenusSpecies[i], "\\S+") == 1) {
+    final_oba_df$Bee.resolution[i] <- "Genus"
+  }
+  else {
+    final_oba_df$Bee.resolution[i] <- "Species"
+  }
+}
+table(final_oba_df$Bee.resolution)
+table(final_oba_df$Plant.resolution)
+
+final_oba_df$Plant.genus <- ifelse(
+  final_oba_df$Plant.resolution %in% c("Genus", "Species"),
+  word(final_oba_df$Associated.plant...genus..species, 1), NA)
+
+table(final_oba_df$Plant.genus)
+
+final_oba_df$Bee.genus <- ifelse(
+  final_oba_df$Bee.resolution %in% c("Genus", "Species") & str_count(final_oba_df$GenusSpecies, "\\S+") > 1, word(final_oba_df$GenusSpecies, 1, 2), NA)
+
+table(final_oba_df$Bee.genus)
+```
+
+Drop the NA values
+```{r}
+final_oba_df <- final_oba_df %>% 
+  filter(!is.na(Plant.genus) & !is.na(Bee.genus))
+
+final_oba_df
+```
+
+Add the site status column to our final clean data frame
+```{r}
 # Initialize an empty site status column
 final_oba_df$Site.status <- NA
 
@@ -313,3 +405,142 @@ for (i in 1:nrow(final_oba_df)) {
 
 head(final_oba_df)
 ```
+
+Before the fires species interactions network
+```{r}
+# Filter data for 'before' fire interactions
+before_fire_interactions <- final_oba_df[final_oba_df$Site.status == "Before", ]
+
+# Create the nodes
+nodes <- data.frame(
+  name = unique(c(before_fire_interactions$Bee.genus, before_fire_interactions$Plant.genus))
+)
+
+# Create the links
+links <- data.frame(
+  source = match(before_fire_interactions$Bee.genus, nodes$name) - 1,
+  target = match(before_fire_interactions$Plant.genus, nodes$name) - 1,
+  value = 1
+)
+
+# Aggregate interactions for unique source-target pairs
+links <- aggregate(value ~ source + target, data = links, sum)
+
+# Create the Sankey network
+library(networkD3)
+
+sankey <- sankeyNetwork(
+  Links = links,
+  Nodes = nodes,
+  Source = "source",
+  Target = "target",
+  Value = "value",
+  NodeID = "name",
+  units = "Interactions",
+  fontSize = 12,
+  nodeWidth = 30
+)
+
+# Render the Sankey diagram
+sankey
+```
+
+```{r}
+#richness for bees
+Bee.Richness.before <- length(unique(final_oba_df$Bee.genus[final_oba_df$Site.status == "Before"]))
+Bee.Richness.after <- length(unique(final_oba_df$Bee.genus[final_oba_df$Site.status == "After"]))
+Bee.Richness.change <- Bee.Richness.after - Bee.Richness.before
+
+#richness for plants
+Plant.Richness.before <- length(unique(final_oba_df$Plant.genus[final_oba_df$Site.status == "Before"]))
+Plant.Richness.after <- length(unique(final_oba_df$Plant.genus[final_oba_df$Site.status == "After"]))
+Plant.Richness.change <- Plant.Richness.after - Plant.Richness.before
+```
+Bee
+```{r}
+shuffled_status <- sample(final_oba_df$Site.status)
+final_oba_df$Shuffled.status <- shuffled_status
+
+null_simulation_bee <- replicate(1000,{
+  shuffled_status <- sample(final_oba_df$Site.status)
+  Richness.before <- length(unique(final_oba_df$Bee.genus[final_oba_df$shuffled.status == "Before"]))
+  Richness.after <- length(unique(final_oba_df$Bee.genus[final_oba_df$shuffled.status == "After"]))
+  Richness.after - Richness.before
+  
+})
+
+observed <- Bee.Richness.change
+p_value <- mean(null_simulation  >= observed)
+print(p_value)
+
+final_oba_df$Shuffled.status
+final_oba_df
+```
+```{r}
+shuffled_status <- sample(final_oba_df$Site.status)
+final_oba_df$Shuffled.status <- shuffled_status
+
+null_simulation_plant <- replicate(1000,{
+  shuffled_status <- sample(final_oba_df$Site.status)
+  Richness.before <- length(unique(final_oba_df$Plant.genus[final_oba_df$shuffled.status == "Before"]))
+  Richness.after <- length(unique(final_oba_df$Plant.genus[final_oba_df$shuffled.status == "After"]))
+  Richness.after - Richness.before
+  
+})
+
+observed <- Plant.Richness.change
+p_value <- mean(null_simulation  >= observed)
+print(p_value)
+```
+```{r}
+# Filter data for 'before' fire interactions
+after_fire_interactions <- final_oba_df[final_oba_df$Site.status == "After", ]
+
+# Create the nodes
+nodes_after <- data.frame(
+  name = unique(c(after_fire_interactions$Bee.genus, after_fire_interactions$Plant.genus))
+)
+
+# Create the links
+links_after <- data.frame(
+  source = match(after_fire_interactions$Bee.genus, nodes_after$name) - 1,
+  target = match(after_fire_interactions$Plant.genus, nodes_after$name) - 1,
+  value = 1
+)
+
+# Aggregate interactions for unique source-target pairs
+links_after <- aggregate(value ~ source + target, data = links_after, sum)
+
+# Create the Sankey network
+library(networkD3)
+
+sankey <- sankeyNetwork(
+  Links = links_after,
+  Nodes = nodes_after,
+  Source = "source",
+  Target = "target",
+  Value = "value",
+  NodeID = "name",
+  units = "Interactions",
+  fontSize = 12,
+  nodeWidth = 30
+)
+
+# Render the Sankey diagram
+sankey
+```
+
+```{r}
+bee_summary_stats_df$Site.status <- factor(bee_summary_stats_df$Site.status, levels = c("Before", "After"))
+
+ggplot(bee_summary_stats_df, aes(x = Site.status, y = Species.richness, fill = Site.status)) +
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7) +
+  labs(
+    title = "Species Richness Before and After Fire",
+    x = "Site Status",
+    y = "Species Richness"
+  ) +
+  scale_fill_manual(values = c("orange", "skyblue")) +
+  theme_minimal()
+```
+
