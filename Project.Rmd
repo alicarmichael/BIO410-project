@@ -19,7 +19,7 @@ library(tidyr)
 Cleaning Oregon Bee Atlas data
 ```{r}
 # Load in Oregon Bee Atlas data
-oba <- read.csv("data/OBA_2018-2023.csv") 
+oba <- read.csv("project/data/OBA_2018-2023.csv") 
 head(oba)
 nrow(oba)
 oba <- read.csv("project/data/OBA_2018-2023.csv") 
@@ -177,7 +177,6 @@ ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
                fill = "lightgrey", color = "white") +
   geom_sf(data = oba_observations_sf, aes(color ="blue"), size = .1, alpha = 0.9) +
-  geom_sf(data = bee_observations_sf, aes(color ="blue"), size = .1, alpha = 0.9) +
   labs(title = "Bee Species Observations in Oregon",
        x = "Longitude", 
        y = "Latitude") +
@@ -185,68 +184,6 @@ ggplot() +
   coord_sf()
 
 ```
-Plooted both so maybe we can pick fires that have alot ob obervations.
-```{r plot fire and bee}
-#plot that show Distribution of fires and bee observations
-ggplot() +
-  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
-               fill = "lightgrey", color = "white") +
-  geom_sf(data = fire_data_sf, aes(color = SizeClass), size = fire_data_sf$SizeClass, alpha = 0.9) +
-  scale_color_gradient(low = "yellow", high = "red", name = "Fire Size Class") + # Adjust the colors
-  geom_sf(data = bee_observations_sf, color= "blue", size = .1, alpha = 0.3) +
-  labs(title = "Distribution of fires and bee observations",
-       x = "Longitude", 
-       y = "Latitude") +
-  theme_minimal() +
-  coord_sf()
-```
-
-Created a 1km buffer around each fire and counted how many bee obervations occured in that buffer.
-```{r}
-#Now its time to go fire by fire and determin how many bee observations are present in a 1km radius of the fire origin
-
-# create a 1 km buffer around each fire point
-fire_buffers <- st_buffer(fire_data_sf, dist = 1000)  # 1000 meters = 1 km
-
-# spatial join to find bee observations within each buffer
-bee_counts <- st_join(fire_buffers, bee_observations_sf, join = st_intersects)
-
-# Count bee observations per fire
-fire_bee_counts <- bee_counts %>%
-  group_by(FireName) %>%  # Group by fire name or another identifier
-  summarize(BeeCount = n())  # Counts the number of bee observations
-
-#create df
-fire_bee_counts_df <- as.data.frame(fire_bee_counts)
-fire_bee_counts_df
-
-#list the top 10 fires with the most bee observations
-top_fires <- bee_counts %>%
-  group_by(FireName) %>%  # group by fire name 
-  summarize(BeeCount = n()) %>%  # count the number of bee observations
-  arrange(desc(BeeCount)) %>%  # now sort by BeeCount in descending order
-  slice_head(n = 10)  # then select the top 10 fires
-```
-Found the fires with the top 10 bee obervations, but some of these fires are very small.
-```{r}
-# View the top 10 fires
-print(top_fires)
-
-top_fires_sf <- st_as_sf(top_fires, coords = c("longitude", "latitude"), crs = 4326)
-print(top_fires_sf)
-```
-
-Added the bee counts to the original df
-```{r merge the two df}
-#left join based on the FireName column
-result_df <- fire_data_newdf %>%
-  left_join(fire_bee_counts_df %>% select(FireName, BeeCount), by = "FireName")
-
-print(result_df)
-
-```
-
-
 ```{r}
 LionsHead_sf <- read_sf("data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
 
