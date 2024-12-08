@@ -1,0 +1,34 @@
+---
+title: "Oregon Bees and Wildfires"
+author: "Ali Carmichael"
+date: "2024-12-08"
+output: pdf_document
+---
+Introduction:
+
+In Oregon, recent data shows a clear increase in wildfire frequency and intensity, largely due to extreme heat, drought frequency, and less cold weather caused by climate change. Increased temperature and lack of moisture in fire fuel like trees, shrubs, grasses, and forest debris can create several factors required to fuel large-scale fires. According to Oregon Climate Assessments, Oregon saw more days per year near 90 degrees between 2011 and 2020 than between 1951 and 2010 (Rojas, 2023). Since 2015, Oregon has experienced significant, record-breaking wildfire seasons that have led to massive destruction and ecosystem disruptions. A study cited by the National Oceanic and Atmospheric Administration (NOAA, 2023) found that climate change has doubled the area burned in western U.S. forests between 1984 and 2015. Furthermore, research shows that an average annual increase in temperature of 1 degree Celsius could increase the median burned area per year by as much as 600% in some forests (NOAA, 2023). Ongoing warming could continue amplifying fire seasons, posing long-term threats to Oregon’s forest and wildlife. 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
