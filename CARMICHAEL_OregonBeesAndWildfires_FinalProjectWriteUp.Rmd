@@ -8,6 +8,145 @@ Introduction:
 
 In Oregon, recent data shows a clear increase in wildfire frequency and intensity, largely due to extreme heat, drought frequency, and less cold weather caused by climate change. Increased temperature and lack of moisture in fire fuel like trees, shrubs, grasses, and forest debris can create several factors required to fuel large-scale fires. According to Oregon Climate Assessments, Oregon saw more days per year near 90 degrees between 2011 and 2020 than between 1951 and 2010 (Rojas, 2023). Since 2015, Oregon has experienced significant, record-breaking wildfire seasons that have led to massive destruction and ecosystem disruptions. A study cited by the National Oceanic and Atmospheric Administration (NOAA, 2023) found that climate change has doubled the area burned in western U.S. forests between 1984 and 2015. Furthermore, research shows that an average annual increase in temperature of 1 degree Celsius could increase the median burned area per year by as much as 600% in some forests (NOAA, 2023). Ongoing warming could continue amplifying fire seasons, posing long-term threats to Oregon’s forest and wildlife. 
 
+Packages used:
+```{r, Load in packages used}
+library(terra)
+library(ggplot2)
+library(dplyr)
+library(sf)
+library(maps)
+library(ggspatial)
+library(plotly)
+library(knitr)
+library(stringr)
+library(vegan)
+library(igraph)
+library(networkD3)
+```
+
+
+Data:
+(Paragraph discussing the data sets that were used)
+```{r, Load in datasets and cleaning procedures}
+
+# Load in Oregon Bee Atlas data
+oba <- read.csv("project/data/OBA_2018-2023.csv") 
+
+#load in fire border data
+LionsHead_sf <- read_sf("project/data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
+BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
+Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
+
+
+#load in preview of datasets
+head(oba)
+head(LionsHead_sf)
+head(BeachieCreek_sf)
+head(Riverside_sf)
+```
+
+Cleaning Procedures of OBA data:
+(Paragraph discussing the methods used to clean the data)
+```{r,Cleaning Procedures of OBA data}
+#We have a some rows with blank values or spaces that make the data difficult to use, we will remove these to make analysis easier.
+
+#removed blanks
+final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
+final_oba_df <- final_oba_df[final_oba_df$GenusSpecies != " ",]
+is.na(final_oba_df)
+final_oba_df
+
+
+#We also need to fix all the weird species names for the plants. There are a lot of weird names that make analysis challenging.
+
+## Remove the special character
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "\x92", "")
+
+# Removing blanks
+final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
+
+# Removing "net"
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "net", "")
+
+# Removing yarrow
+final_oba_df$Associated.plant...genus..species[final_oba_df$Associated.plant...genus..species == "Yarrow"] <- "Achillea millefollium"
+
+# Removing non plant
+final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "Weedy yellow comp.",]
+
+# Removing common names in ()
+final_oba_df$Associated.plant...genus..species <- gsub("\\s*\\(.*?\\)", "", final_oba_df$Associated.plant...genus..species)
+
+# Removing weird words
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, ",.*$", "")
+
+# Removing space
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "\\s+$", "")
+
+# Removing "sp."
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, " sp$", " sp.")
+
+# Removing "or"
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, " or .*", "")
+
+# Removing lists
+final_oba_df <- final_oba_df[!grepl(",", final_oba_df$Associated.plant...genus..species),]
+
+head(final_oba_df)
+
+#Here we are creating two columns to sort the plant and bee species by genus and species. When we make our networks it will make it easier to have just the genus and species sorted. We will start with identifying the species resolution then we will drop the values that are missing a genus or species.
+
+# Initialize the empty columns to NA values
+final_oba_df$Plant.resolution <- NA
+final_oba_df$Bee.resolution <- NA
+
+# Loop through the data frame and then check if there is only one word in the
+# plant column. If there's one word it will be the Genus, otherwise it's species.
+for (i in 1:nrow(final_oba_df)) {
+  if (str_count(final_oba_df$Associated.plant...genus..species[i], "\\S+") == 1) {
+    final_oba_df$Plant.resolution[i] <- "Genus"
+  }
+  else {
+    final_oba_df$Plant.resolution[i] <- "Species"
+  }
+}
+
+# Similar to above we will loop through our data frame and determine if the Bee resolution is
+# Genus or Species
+for (i in 1:nrow(final_oba_df)) {
+  if (str_count(final_oba_df$GenusSpecies[i], "\\S+") == 1) {
+    final_oba_df$Bee.resolution[i] <- "Genus"
+  }
+  else {
+    final_oba_df$Bee.resolution[i] <- "Species"
+  }
+}
+```
+
+Data Wrangling and Summarizing
+```{r}
+
+```
+
+Hypothesis Tests
+(Paragraph discussing the Tests used)
+```{r, Load i all tests used}
+
+```
+
+Visualization
+```{r, load in all final visualizations}
+
+```
+
+
+Discussion/Conclusion
+
+"No need to load in code for this section"
+
+
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
