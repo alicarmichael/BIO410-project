@@ -4,15 +4,6 @@ author: "Ali Carmichael"
 date: "2024-12-08"
 output: pdf_document
 ---
-Cleaning Procedures of OBA data:
-Although the shape files for the fire borders required no cleaning, the Oregon Bee Atlas data had to be cleaned to create clear and consistent bee/plant species names. We also needed to remove some rows that had missing observations that didn't include both bee and plant observation. Lastly we created a new column "Genus Species" where we merged columns "genus" and "species" together.
-
-
-Data Wrangling and Summarizing:
-Plotted the bee observations so we can see what areas aren't reached by OBA. It also shows us the distribution of our
-observations and if we have any that seem like they might be incorrect. This is just an initial visualization to explore
-the observation points.
-
 Introduction:
 
   In Oregon, recent data shows a clear increase in wildfire frequency and intensity, largely due to extreme heat, drought frequency, and less cold weather caused by climate change. Increased temperature and lack of moisture in fire fuel like trees, shrubs, grasses, and forest debris can create several factors required to fuel large-scale fires. According to Oregon Climate Assessments, Oregon saw more days per year near 90 degrees between 2011 and 2020 than between 1951 and 2010 (Rojas, 2023). Since 2015, Oregon has experienced significant, record-breaking wildfire seasons that have led to massive destruction and ecosystem disruptions. A study cited by the National Oceanic and Atmospheric Administration (NOAA, 2023) found that climate change has doubled the area burned in western U.S. forests between 1984 and 2015. Furthermore, research shows that an average annual increase in temperature of 1 degree Celsius could increase the median burned area per year by as much as 600% in some forests (NOAA, 2023). Ongoing warming could continue amplifying fire seasons, posing long-term threats to Oregon’s forest and wildlife. 
@@ -21,7 +12,23 @@ Introduction:
   Our study looks at the recovery of bee and native plant populations in the area affected by the Santiam fire in 2020. We selected the Santiam fire because it was composed of three separate fires in the same area during the same time interval. The Santiam fire consists of three fires, the Lionshead fire, Riverside fire, and Beachie Creek fire. To investigate recovery patterns, we will analyze data from the Oregon Bee Atlas, which includes details on bee species, their locations, and the plants they associate with (Oregon Bee Project, 2023). This information is essential for identifying which bee species recover first and the specific plants they are associated with in post-fire zones. Fire zone data from the Monitoring Trends Burn Severity (MTBS) will be used to identify burned areas. By combining these data sets, we want to assess changes in bee and native plant species diversity before and after wildfires by calculating the species richness. This study will help bring attention to the ecological endangerment of bee populations and provide bee conservationists with insights to better assist our pollinating friends in becoming more resilient to wildfires.
   Pollinators, especially bees, are vital to ecosystem health and especially agricultural productivity. Bees play an essential role in the pollination of many plants, including crops. As discussed earlier, bees are in charge of pollinating a little over a third of US crops (USDA, 2024). The heavy reliance on pollinators means we are obligated to protect them. According to the Environmental Defense Fund, As climate change intensifies, extreme heat and drought conditions are leading to more frequent and severe wildfires. These fires cause widespread destruction to habitats, affecting both flora and fauna and threatening the survival of pollinator populations (Environmental Defense Fund, 2024). Given the growing ecological threats caused by climate change, there is an urgent need to understand how bee populations recover in post-fire environments and identify factors that support resilience. Visualizing recovery patterns across different habitats using spatial data can provide helpful insights into which ecosystems and native plants foster quicker bee recovery. 
 	The goal of this project is to answer the following question about how wildfires affect bee populations and the flora they interact with: How do bee and Native plant species differ in areas before and after wildfires? We expect the composition of bee and native plant species in a post-fire setting to differ significantly from that of a pre-fire setting. We also predict that the bee species in post-fire areas will associate with early-successional plant species that can colonies and then transmit to more diverse flora as recovery accelerates.
-	
+
+Packages use for our project
+```{r load packs}
+library(terra)
+library(ggplot2)
+library(dplyr)
+library(sf)
+library(maps)
+library(ggspatial)
+library(plotly)
+library(knitr)
+library(stringr)
+library(vegan)
+library(igraph)
+library(networkD3)
+```
+
 Data:
 The data sets used for this project were obtained from the Oregon Bee Atlas database. These data sets are comprised of iNaturalist observations of bee species and associated plant species. We also used three Shapefiles of the Lions Head, Beachie Creak, and Riverside Fire to create burn borders for the 2020 Santiam Fire. These data sets were downloaded from the Monitoring Trends Burn Severity (MTBS) website and plotted onto an Oregon map.
 ```{r, Load in datasets and cleaning procedures}
@@ -29,7 +36,8 @@ The data sets used for this project were obtained from the Oregon Bee Atlas data
 # Load in Oregon Bee Atlas data
 oba <- read.csv("project/data/OBA_2018-2023.csv") 
 
-#load in fire border data
+#Next, we loaded in our fire data sets. These are three fires that occurred in the same area in 2020. Two of the fire lines merged and the other fire was really close to the borders of the merged fire. These three fires are often recorded as one large fire called the Santiam fire. We are using these because they were 3 very large fires in 2020 that have a lot of bee observations around them. 
+
 LionsHead_sf <- read_sf("project/data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
 BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
 Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
@@ -69,10 +77,10 @@ oregon_map <- map_data("county", "oregon") %>%
   select(long, lat, group, id = subregion)  # Correct column name is `region`
 ```
 
+
 Plotted the bee observations so we can see what areas aren't reached by OBA. It also shows us the distribution of our
 observations and if we have any that seem like they might be incorrect. This is just an intial visualization to explore
 the observation points.
-
 ```{r graph bee data}
 oba_observations_sf <- st_as_sf(oba, coords = c("Dec..Long.", "Dec..Lat."), crs = 4326)
 
@@ -92,18 +100,8 @@ ggplot() +
 
 ```
 
-Next, we loaded in our fire data sets. These are three fires that occurred in the same area in 2020. Two of the fire
-lines merged and the other fire was really close to the borders of the merged fire. These three fires are often
-recorded as one large fire called the Santiam fire. We are using these because they were 3 very large fires in 2020 
-that have a lot of bee observations around them. 
+Next we will match the CRS of the fires to allow use to plot them all on the oregon map.
 ```{r}
-# Load in each fire shape file
-LionsHead_sf <- read_sf("project/data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
-
-BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
-
-Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
-
 # Set a common CRS 
 target_crs <- st_crs(4326)
 
@@ -161,6 +159,7 @@ ggplot() +
     ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
   )
 ```
+
 Now we want to crop our bee observations to just the ones that are in the borders of the three fires.
 We are going to paste our fires into one polygon as it is often recorded as one fire. We used the function 
 st_intersection to crop our data set to the fire borders. 
@@ -234,6 +233,7 @@ final_oba_df <- final_oba_df[final_oba_df$GenusSpecies != " ",]
 is.na(final_oba_df)
 final_oba_df
 ```
+
 We also need to fix all the weird species names for the plants. There are a lot of
 weird names that make analysis challenging.
 ```{r}
@@ -600,6 +600,7 @@ ggplot(bee_summary_stats_df, aes(x = Site.status, y = Species.richness, fill = S
        #units = "in",
        #bg = "white")
 ```
+
 Bar plot for the plant species richness.
 ```{r}
 plant_summary_stats_df <- data.frame(
