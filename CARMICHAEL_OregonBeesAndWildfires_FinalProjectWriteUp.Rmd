@@ -26,7 +26,8 @@ library(networkD3)
 
 
 Data:
-(Paragraph discussing the data sets that were used)
+The data sets used for this project were obtained from the Oregon Bee Atlas database. These data sets are comprised of iNaturalist observations of bee species and associated plant species. We also used three Shapefiles of the Lions Head, Beachie Creak, and Riverside Fire to create burn borders for the 2020 Santiam Fire. These data sets were downloaded from the Monitoring Trends Burn Severity (MTBS) website and plotted onto an Oregon map.
+
 ```{r, Load in datasets and cleaning procedures}
 
 # Load in Oregon Bee Atlas data
@@ -37,6 +38,9 @@ LionsHead_sf <- read_sf("project/data/LionsHead/or4472312167920200817_20200810_2
 BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
 Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
 
+# Load Oregon county map data
+oregon_map <- map_data("county", "oregon") %>% 
+  select(long, lat, group, id = subregion)  
 
 #load in preview of datasets
 head(oba)
@@ -46,7 +50,7 @@ head(Riverside_sf)
 ```
 
 Cleaning Procedures of OBA data:
-(Paragraph discussing the methods used to clean the data)
+Although the shape files for the fire borders required no cleaning, the Oregon Bee Atlas data had to be cleaned to create clear and consistent bee/plant species names. We also needed to remove some rows that had missing observations that didn't include both bee and plant observation. Lastly we created a new column "Genus Species" where we merged columns "genus" and "species" together.
 ```{r,Cleaning Procedures of OBA data}
 #We have a some rows with blank values or spaces that make the data difficult to use, we will remove these to make analysis easier.
 
@@ -123,24 +127,24 @@ for (i in 1:nrow(final_oba_df)) {
 }
 ```
 
-Data Wrangling and Summarizing
+Data Wrangling and Summarizing:
 ```{r}
 
 ```
 
-Hypothesis Tests
+Hypothesis Tests:
 (Paragraph discussing the Tests used)
 ```{r, Load i all tests used}
 
 ```
 
-Visualization
+Visualization:
 ```{r, load in all final visualizations}
 
 ```
 
 
-Discussion/Conclusion
+Discussion/Conclusion:
 
 "No need to load in code for this section"
 
@@ -148,26 +152,3 @@ Discussion/Conclusion
 
 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
