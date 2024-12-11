@@ -73,10 +73,10 @@ sum(is.na(oba$Dec..Long.))
 #We have a some rows with blank values or spaces that make the data difficult to use, we will remove these to make analysis easier.
 
 #removed blanks
-final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
+final_oba_df <- oba[oba$Associated.plant...genus..species != "",]
 final_oba_df <- final_oba_df[final_oba_df$GenusSpecies != " ",]
 is.na(final_oba_df)
-final_oba_df
+head(final_oba_df)
 
 #We also need to fix all the weird species names for the plants. There are a lot of weird names that make analysis challenging.
 
@@ -225,7 +225,7 @@ head(final_oba_df)
 
 Data Wrangling and Summarizing:
 Plotted the bee observations so we can see what areas aren't reached by OBA. It also shows us the distribution of our
-observations and if we have any that seem like they might be incorrect. This is just an intial visualization to explore
+observations and if we have any that seem like they might be incorrect. This is just an initial visualization to explore
 the observation points.
 ```{r graph bee data}
 oba_observations_sf <- st_as_sf(oba, coords = c("Dec..Long.", "Dec..Lat."), crs = 4326)
@@ -656,7 +656,596 @@ Discussion/Conclusion:
 Future research should prioritize expanding post-fire datasets to better capture the recovery of pollinators and their environments. Understanding how wildfires impact pollinator-plant relationships is crucial for developing effective conservation strategy. As the climate continues to change and drive more frequent and intense wildfires, protecting pollinator ecosystems is vital in preserving pollinator functionality and biodiversity.
 
 
+Load in the Oregon Bee Atlas data using the read.csv() function.
+```{r}
+# Load in Oregon Bee Atlas data
 
+oba <- read.csv("project/data/OBA_2018-2023.csv") 
+head(oba)
+```
+Checking how many NA Values we have in our Latitude and Longitude column. We won't be able 
+to use rows with NA's so we need to drop them.
+```{r}
+# Initial check
+sum(is.na(oba$Dec..Lat.))
+sum(is.na(oba$Dec..Long.))
+
+# Filter out the NA values
+oba <- oba %>% 
+  filter(!is.na(Dec..Lat.) & !is.na(Dec..Long.))
+
+# Final Check
+sum(is.na(oba$Dec..Lat.))
+sum(is.na(oba$Dec..Long.))
+```
+Loading in the a map of Oregon for plotting our observations.
+```{r, Oregon Map}
+# Load Oregon county map data
+oregon_map <- map_data("county", "oregon") %>% 
+  select(long, lat, group, id = subregion)  # Correct column name is `region`
+```
+
+Plotted the bee observations so we can see what areas aren't reached by OBA. It also shows us the distribution of our
+observations and if we have any that seem like they might be incorrect. This is just an intial visualization to explore
+the observation points.
+```{r graph bee data}
+oba_observations_sf <- st_as_sf(oba, coords = c("Dec..Long.", "Dec..Lat."), crs = 4326)
+
+#st_crs(oba_observations_sf)
+#st_crs(oregon_map_sf) == st_crs(oba_observations_sf)
+
+#plot bee observations on to oregon map with fires
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = oba_observations_sf, aes(color ="blue"), size = .1, alpha = 0.9) +
+  labs(title = "Bee Species Observations in Oregon",
+       x = "Longitude", 
+       y = "Latitude") +
+  theme_minimal() +
+  coord_sf()
+
+```
+
+Next, we loaded in our fire data sets. These are three fires that occurred in the same area in 2020. Two of the fire
+lines merged and the other fire was really close to the borders of the merged fire. These three fires are often
+recorded as one large fire called the Santiam fire. We are using these because they were 3 very large fires in 2020 
+that have a lot of bee observations around them. 
+```{r}
+# Load in each fire shape file
+LionsHead_sf <- read_sf("project/data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
+
+BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
+
+Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
+
+# Set a common CRS 
+target_crs <- st_crs(4326)
+
+# Transform each fire to the target CRS
+LionsHead_sf <- st_transform(LionsHead_sf, target_crs)
+BeachieCreek_sf <- st_transform(BeachieCreek_sf, target_crs)
+Riverside_sf <- st_transform(Riverside_sf, target_crs)
+
+#check if they match
+print(st_crs(LionsHead_sf) == st_crs(BeachieCreek_sf))
+print(st_crs(BeachieCreek_sf) == st_crs(Riverside_sf))
+
+# Plotting the fires on the oregon map loaded in earlier
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, color = "Red", alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, color = "Red", alpha = 0.9) +
+  geom_sf(data = Riverside_sf, color = "Red", alpha = 0.9) +
+  labs(
+    title = "Distribution of Oregon Fires in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf()
+
+#Now lets zoom in
+
+# merge all fires into one
+fire_combined_bbox <- st_bbox(rbind(LionsHead_sf, BeachieCreek_sf, Riverside_sf))
+
+# Adjust the margins 
+fire_combined_bbox <- fire_combined_bbox + c(-0.1, -0.1, 0.1, 0.1)  #(xmin, ymin, xmax, ymax)
+
+# Final plotting of the zoomed in section of Oregon
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, aes(color = "Lions Head"), alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, aes(color = "Beachie Creek"), alpha = 0.9) +
+  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
+  scale_color_manual(
+    name = "Fires",
+    values = c("Lions Head" = "red", "Beachie Creek" = "purple", "Riverside" = "yellow")
+  ) +
+  labs(
+    title = "Zoomed-In View of Oregon Fires in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf(
+    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
+    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
+  )
+```
+Now we want to crop our bee observations to just the ones that are in the borders of the three fires.
+We are going to paste our fires into one polygon as it is often recorded as one fire. We used the function 
+st_intersection to crop our data set to the fire borders. 
+```{r}
+#Merge all fires into one object
+all_fire_boarder <- rbind(LionsHead_sf, BeachieCreek_sf, Riverside_sf)
+
+#Create a subset of obersvations inside the border
+only_fire_bees <- st_intersection(oba_observations_sf, all_fire_boarder)
+head(only_fire_bees)
+
+only_fire_bees_df <- as.data.frame(only_fire_bees)
+
+#merges genus and species and makes a new column
+only_fire_bees_df$GenusSpecies <- paste(only_fire_bees_df$Genus, only_fire_bees_df$Species)
+#create a subset
+final_oba_df <- only_fire_bees_df %>% select("Year.1", "GenusSpecies","Associated.plant...genus..species", "BurnBndLat", "BurnBndLon",)
+
+head(final_oba_df)
+```
+
+Here we plot our fires and our cropped bee observations from above on the map of Oregon
+```{r, subset data}
+
+ ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "tan", color = "black") +
+  geom_sf(data = LionsHead_sf, aes(color = "Lions Head"), alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, aes(color = "Beachie Creek"), alpha = 0.9) +
+  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
+  geom_sf(data = only_fire_bees, aes(color = "Bee Observation"), size = 1, alpha = 0.9) +
+  scale_color_manual(
+    name = "Fire and Observations",
+    values = c(
+      "Lions Head" = "red",
+      "Beachie Creek" = "purple",
+      "Riverside" = "Dark Green",
+      "Bee Observation" = "blue"
+    ),
+    breaks = c(
+      "Lions Head",
+      "Beachie Creek",
+      "Riverside",
+      "Bee Observation"
+    )
+  ) + 
+  labs(
+    title = "Oregon Santiam Fire in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    plot.background = element_rect(fill = "white")
+  ) +
+  coord_sf(
+    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
+    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
+  )
+
+#ggsave("oregon_fire_map.png", dpi = 300, width = 12, height = 8)  
+```
+
+We have a some rows with blank values or spaces that make the data difficult to use,
+we will remove these to make analysis easier.
+```{r}
+#removed blanks
+final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
+final_oba_df <- final_oba_df[final_oba_df$GenusSpecies != " ",]
+is.na(final_oba_df)
+final_oba_df
+```
+We also need to fix all the weird species names for the plants. There are a lot of
+weird names that make analysis challenging.
+```{r}
+## Remove the special character
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "\x92", "")
+
+# Removing blanks
+final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
+
+# Removing "net"
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "net", "")
+
+# Removing yarrow
+final_oba_df$Associated.plant...genus..species[final_oba_df$Associated.plant...genus..species == "Yarrow"] <- "Achillea millefollium"
+
+# Removing non plant
+final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "Weedy yellow comp.",]
+
+# Removing common names in ()
+final_oba_df$Associated.plant...genus..species <- gsub("\\s*\\(.*?\\)", "", final_oba_df$Associated.plant...genus..species)
+
+# Removing weird words
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, ",.*$", "")
+
+# Removing space
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "\\s+$", "")
+
+# Removing "sp."
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, " sp$", " sp.")
+
+# Removing "or"
+final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, " or .*", "")
+
+# Removing lists
+final_oba_df <- final_oba_df[!grepl(",", final_oba_df$Associated.plant...genus..species),]
+
+head(final_oba_df)
+```
+
+Here we are creating two columns to sort the plant and bee species by genus and species.
+When we make our networks it will make it easier to have just the genus and species sorted. We will start
+with identifying the species resolution then we will drop the values that are missing a genus or species.
+```{r}
+# Initialize the empty columns to NA values
+final_oba_df$Plant.resolution <- NA
+final_oba_df$Bee.resolution <- NA
+
+# Loop through the data frame and then check if there is only one word in the
+# plant column. If there's one word it will be the Genus, otherwise it's species.
+for (i in 1:nrow(final_oba_df)) {
+  if (str_count(final_oba_df$Associated.plant...genus..species[i], "\\S+") == 1) {
+    final_oba_df$Plant.resolution[i] <- "Genus"
+  }
+  else {
+    final_oba_df$Plant.resolution[i] <- "Species"
+  }
+}
+
+# Similar to above we will loop through our data frame and determine if the Bee resolution is
+# Genus or Species
+for (i in 1:nrow(final_oba_df)) {
+  if (str_count(final_oba_df$GenusSpecies[i], "\\S+") == 1) {
+    final_oba_df$Bee.resolution[i] <- "Genus"
+  }
+  else {
+    final_oba_df$Bee.resolution[i] <- "Species"
+  }
+}
+
+# Check our resolutions
+table(final_oba_df$Bee.resolution)
+table(final_oba_df$Plant.resolution)
+
+# Now we want to filter our plant species to the rows that contain 
+# just the genus
+final_oba_df$Plant.genus <- ifelse(
+  final_oba_df$Plant.resolution %in% c("Genus", "Species"),
+  word(final_oba_df$Associated.plant...genus..species, 1), NA)
+
+# Check the plant genus
+table(final_oba_df$Plant.genus)
+
+# Now we will filter our bee species to both Genus and species
+final_oba_df$Bee.genus <- ifelse(
+  final_oba_df$Bee.resolution %in% c("Genus", "Species") & str_count(final_oba_df$GenusSpecies, "\\S+") > 1, word(final_oba_df$GenusSpecies, 1, 2), NA)
+
+# Check our bee genus 
+table(final_oba_df$Bee.genus)
+```
+
+Drop the NA values to get our final clean data set with the correct bee and plant resolutions.
+```{r}
+final_oba_df <- final_oba_df %>% 
+  filter(!is.na(Plant.genus) & !is.na(Bee.genus))
+
+final_oba_df
+```
+
+Add the site status column to our final clean data frame. We want the site status to be "Before" if
+the year of the observation was 2020 and before and "After" if the observation was after 2020.
+```{r}
+# Initialize an empty site status column
+final_oba_df$Site.status <- NA
+
+# Loop through the oba data frame
+for (i in 1:nrow(final_oba_df)) {
+  if (final_oba_df$Year.1[i] <= 2020) {
+    final_oba_df$Site.status[i] <- "Before"
+  }
+  else {
+    final_oba_df$Site.status[i] <- "After"
+  }
+}
+
+# Check our new data frame
+head(final_oba_df)
+```
+
+Creating a species interaction network for before the fires.
+```{r}
+# Filter data for 'before' fire interactions
+before_fire_interactions <- final_oba_df[final_oba_df$Site.status == "Before", ]
+
+# Create the nodes
+nodes_before <- data.frame(
+  name = unique(c(before_fire_interactions$Bee.genus, before_fire_interactions$Plant.genus))
+)
+
+# Create the links
+links_before <- data.frame(
+  source = match(before_fire_interactions$Bee.genus, nodes_before$name) - 1,
+  target = match(before_fire_interactions$Plant.genus, nodes_before$name) - 1,
+  value = 1
+)
+
+# Aggregate interactions for unique source-target pairs
+links_before <- aggregate(value ~ source + target, data = links_before, sum)
+
+# Create the Sankey network
+library(networkD3)
+
+# Define a color scale for nodes
+color_scale <- 'd3.scaleOrdinal()
+                 .domain(["Bee", "Plant"])
+                 .range(["#1f78b4", "#33a02c"])'
+
+sankey_before <- sankeyNetwork(
+  Links = links_before,
+  Nodes = nodes_before,
+  Source = "source",
+  Target = "target",
+  Value = "value",
+  NodeID = "name",
+  units = "Interactions",
+  fontSize = 14,
+  nodeWidth = 40,
+  colourScale = color_scale
+)
+
+# Here is the network
+sankey_before
+```
+
+Now we want to calculate some statistics to simualte. We want to calculate the species richness before
+and after the fires and then take the difference in richness for both plants and bees.
+```{r}
+# Richness for bees
+Bee_richness_before <- length(unique(final_oba_df$Bee.genus[final_oba_df$Site.status == "Before"]))
+Bee_richness_after <- length(unique(final_oba_df$Bee.genus[final_oba_df$Site.status == "After"]))
+Bee_richness_change <- Bee_richness_after - Bee_richness_before
+
+# Richness for plants
+Plant_richness_before <- length(unique(final_oba_df$Plant.genus[final_oba_df$Site.status == "Before"]))
+Plant_richness_after <- length(unique(final_oba_df$Plant.genus[final_oba_df$Site.status == "After"]))
+Plant_richness_change <- Plant_richness_after - Plant_richness_before
+```
+
+Now we will conduct our simulation using bootstrapping. Our sample size for our "after" group is really small 
+so we will use resampling and then a density histogram to simulate what our hypothesis could look
+like if there was more data available.
+```{r}
+# Observed difference in richness
+bee_observed_diff <- Bee_richness_after - Bee_richness_before
+
+# Resampling procedure because our "after" group is extremmely small
+set.seed(42)  # Set a seed for reproducibility
+num_iterations <- 10000  # Increase iterations for a larger distribution
+
+# Perform simulation with shuffled Site.status
+bee_null_distribution <- replicate(num_iterations, {
+  # Shuffle Site.status
+  shuffled_status <- sample(final_oba_df$Site.status)
+  
+  # Assign the shuffled status to a new column
+  final_oba_df$Shuffled.status <- shuffled_status
+  
+  # Sample from the shuffled "Before" and "After" groups
+  bee_sampled_before <- final_oba_df$Bee.genus[final_oba_df$Shuffled.status == "Before"]
+  bee_sampled_after <- final_oba_df$Bee.genus[final_oba_df$Shuffled.status == "After"]
+  
+  # Calculate richness
+  bee_richness_before <- length(unique(bee_sampled_before))
+  bee_richness_after <- length(unique(bee_sampled_after))
+  
+  # Return the difference in richness
+  bee_richness_after - bee_richness_before
+})
+
+# Compare observed difference with null distribution
+p_value <- mean(abs(bee_null_distribution) >= abs(observed_diff))
+print(paste("p-value: ", p_value))
+
+# Plot the null distribution
+bee_null_df <- data.frame(bee_null_distribution)
+
+ggplot(bee_null_df, aes(x = bee_null_distribution)) +
+  geom_density(fill = "lightblue", alpha = 0.7) +
+  geom_vline(aes(xintercept = bee_observed_diff), color = "red", linetype = "dashed", size = 1) +
+  labs(title = "Null Distribution of Bee Species Richness",
+       x = "Difference in Richness",
+       y = "Density") +
+  theme_minimal() +
+   theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+#ggsave("simulated_bee_species_richness.png", 
+       #plot = bee_plot,
+       #dpi = 300,
+       #units = "in",
+      #bg = "white")
+```
+
+Here we conduct our simulation for the plants.
+```{r}
+# Observed difference in richness
+plant_observed_diff <- Plant_richness_after - Plant_richness_before
+
+# Resampling procedure because our "after" group is extremmely small
+set.seed(42)  # Set a seed for reproducibility
+num_iterations <- 10000  # Increase iterations for a larger distribution
+
+# Perform simulation with shuffled Site.status
+plant_null_distribution <- replicate(num_iterations, {
+  # Shuffle Site.status
+  shuffled_status <- sample(final_oba_df$Site.status)
+  
+  # Assign the shuffled status to a new column
+  final_oba_df$Shuffled.status <- shuffled_status
+  
+  # Sample from the shuffled "Before" and "After" groups
+  plant_sampled_before <- final_oba_df$Plant.genus[final_oba_df$Shuffled.status == "Before"]
+  plant_sampled_after <- final_oba_df$Plant.genus[final_oba_df$Shuffled.status == "After"]
+  
+  # Calculate richness
+  plant_richness_before <- length(unique(plant_sampled_before))
+  plant_richness_after <- length(unique(plant_sampled_after))
+  
+  # Return the difference in richness
+  plant_richness_after - plant_richness_before
+})
+
+# Compare observed difference with null distribution
+p_value <- mean(abs(plant_null_distribution) >= abs(observed_diff))
+print(paste("p-value: ", p_value))
+
+# Plot the null distribution
+plant_null_df <- data.frame(plant_null_distribution)
+ggplot(plant_null_df, aes(x = plant_null_distribution)) +
+  geom_density(fill = "lightblue", alpha = 0.7) +
+  geom_vline(aes(xintercept = plant_observed_diff), color = "red", linetype = "dashed", size = 1) +
+  labs(title = "Null Distribution of Plant Species Richness",
+       x = "Difference in Richness",
+       y = "Density") +
+  theme_minimal() +
+   theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+#ggsave("simulated_plant_species_richness.png", 
+       #dpi = 300,
+       #units = "in",
+      #bg = "white")
+```
+
+Species interaction network for after the fires.
+```{r}
+# Filter data for 'before' fire interactions
+after_fire_interactions <- final_oba_df[final_oba_df$Site.status == "After", ]
+
+# Create the nodes
+nodes_after <- data.frame(
+  name = unique(c(after_fire_interactions$Bee.genus, after_fire_interactions$Plant.genus))
+)
+
+# Create the links
+links_after <- data.frame(
+  source = match(after_fire_interactions$Bee.genus, nodes_after$name) - 1,
+  target = match(after_fire_interactions$Plant.genus, nodes_after$name) - 1,
+  value = 1
+)
+
+# Aggregate interactions for unique source-target pairs
+links_after <- aggregate(value ~ source + target, data = links_after, sum)
+
+# Create the Sankey network
+library(networkD3)
+
+color_scale <- 'd3.scaleOrdinal()
+                 .domain(["Bee", "Plant"])
+                 .range(["#1f78b4", "#33a02c"])'
+
+sankey <- sankeyNetwork(
+  Links = links_after,
+  Nodes = nodes_after,
+  Source = "source",
+  Target = "target",
+  Value = "value",
+  NodeID = "name",
+  units = "Interactions",
+  fontSize = 14,
+  nodeWidth = 40,
+  colourScale = color_scale
+)
+
+# Render the Sankey diagram
+sankey
+```
+
+Bar plot for the bee species richness.
+```{r}
+bee_summary_stats_df <- data.frame(
+  Site.status = c("Before", "After"),
+  Species.richness = c(Bee_richness_before, Bee_richness_after)
+)
+
+bee_summary_stats_df$Site.status <- factor(bee_summary_stats_df$Site.status, levels = c("Before", "After"))
+
+ggplot(bee_summary_stats_df, aes(x = Site.status, y = Species.richness, fill = Site.status)) +
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7) +
+  geom_text(aes(label = Species.richness), vjust = -0.5, size = 4, color = "black") +
+  labs(
+    title = "Bee Species Richness Before and After Fire",
+    x = "Site Status",
+    y = "Species Richness"
+  ) +
+  scale_fill_manual(values = c("orange", "skyblue")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+#ggsave("bee_species_richness.png", 
+       #dpi = 300,
+       #units = "in",
+       #bg = "white")
+```
+Bar plot for the plant species richness.
+```{r}
+plant_summary_stats_df <- data.frame(
+  Site.status = c("Before", "After"),
+  Species.richness = c(Plant_richness_before, Plant_richness_after)
+)
+
+plant_summary_stats_df$Site.status <- factor(plant_summary_stats_df$Site.status, levels = c("Before", "After"))
+
+ggplot(plant_summary_stats_df, aes(x = Site.status, y = Species.richness, fill = Site.status)) +
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7) +
+  geom_text(aes(label = Species.richness), vjust = -0.5, size = 4, color = "black") +
+  labs(
+    title = "Plant Species Richness Before and After Fire",
+    x = "Site Status",
+    y = "Species Richness"
+  ) +
+  scale_fill_manual(values = c("orange", "skyblue")) +
+  theme_minimal() +
+    theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+#ggsave("plant_species_richness.png", 
+       #dpi = 300,
+       #units = "in",
+      # bg = "white")
+```
 
 
 
