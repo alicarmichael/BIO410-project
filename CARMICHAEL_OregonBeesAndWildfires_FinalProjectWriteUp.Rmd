@@ -57,6 +57,19 @@ head(Riverside_sf)
 Cleaning Procedures of OBA data:
 Although the shape files for the fire borders required no cleaning, the Oregon Bee Atlas data had to be cleaned to create clear and consistent bee/plant species names. We also needed to remove some rows that had missing observations that didn't include both bee and plant observation. Lastly we created a new column "Genus Species" where we merged columns "genus" and "species" together.
 ```{r,Cleaning Procedures of OBA data}
+#Checking how many NA Values we have in our Latitude and Longitude column. We won't be able to use rows with NA's so we need to drop them.
+
+# Initial check
+sum(is.na(oba$Dec..Lat.))
+sum(is.na(oba$Dec..Long.))
+
+# Filter out the NA values
+oba <- oba %>% 
+  filter(!is.na(Dec..Lat.) & !is.na(Dec..Long.))
+
+# Final Check
+sum(is.na(oba$Dec..Lat.))
+sum(is.na(oba$Dec..Long.))
 #We have a some rows with blank values or spaces that make the data difficult to use, we will remove these to make analysis easier.
 
 #removed blanks
@@ -64,7 +77,6 @@ final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "
 final_oba_df <- final_oba_df[final_oba_df$GenusSpecies != " ",]
 is.na(final_oba_df)
 final_oba_df
-
 
 #We also need to fix all the weird species names for the plants. There are a lot of weird names that make analysis challenging.
 
@@ -130,263 +142,6 @@ for (i in 1:nrow(final_oba_df)) {
     final_oba_df$Bee.resolution[i] <- "Species"
   }
 }
-```
-
-Data Wrangling and Summarizing:
-```{r}
-
-```
-
-Hypothesis Tests:
-(Paragraph discussing the Tests used)
-```{r, Load i all tests used}
-
-```
-
-Visualization:
-```{r, load in all final visualizations}
-
-```
-
-
-Discussion/Conclusion:
-  This project investigated how bee and native plant species differ before and after wildfires. We hypothesized that the composition of both bee and native plant communities would change significantly following a wildfire, and that post-fire species would be closely linked to early successional plant species. After analyzing OBA data and intersecting it with the wildfire boundaries to create a subset, we calculated species richness for both plants and bees before and after the event. The results showed a decrease in species richness for both groups after the fire. This finding supports our hypothesis and indicates that wildfires negatively affect both bee and native plant richness. 
-	The networks generated from the OBA dataset helped to further visualize plant-bee interactions both before and after the fires. These networks highlighted that bees interacted with shrubs and flowering plants known to colonize early successional landscapes following wildfires, reinforcing our initial hypotheses. These networks also revealed a gap in our data. We currently lack observational data collected after wildfires. This shortfall may stem from restricted public access to recently burned areas or reduced volunteer participation due to unfavorable conditions. The timing of these fires during the COVID-19 pandemic may have further limited data collection, resulting in insufficient observations. However, bootstrapping simulations for both groups yielded non-significant p-values (bees: 0.7025; plants: 0.1936), showing the limitations of the small post-fire dataset.
-	These findings suggest that wildfires not only reduce species richness but also disrupt bee-plant interaction networks, potentially hindering ecosystem recovery. The emergence of early-successional plants as primary interaction partners highlights their importance in post-fire recovery. This holds consistent with ecological studies emphasizing the importance of pioneer species. Due to the lack of data, These findings should only represent the immediate effects of wildfires and not their long-term effect on bee-plant interactions. 
-Future research should prioritize expanding post-fire datasets to better capture the recovery of pollinators and their environments. Understanding how wildfires impact pollinator-plant relationships is crucial for developing effective conservation strategy. As the climate continues to change and drive more frequent and intense wildfires, protecting pollinator ecosystems is vital in preserving pollinator functionality and biodiversity.
-
-
-
-Load in the Oregon Bee Atlas data using the read.csv() function.
-```{r}
-# Load in Oregon Bee Atlas data
-
-oba <- read.csv("project/data/OBA_2018-2023.csv") 
-head(oba)
-```
-Checking how many NA Values we have in our Latitude and Longitude column. We won't be able 
-to use rows with NA's so we need to drop them.
-```{r}
-# Initial check
-sum(is.na(oba$Dec..Lat.))
-sum(is.na(oba$Dec..Long.))
-
-# Filter out the NA values
-oba <- oba %>% 
-  filter(!is.na(Dec..Lat.) & !is.na(Dec..Long.))
-
-# Final Check
-sum(is.na(oba$Dec..Lat.))
-sum(is.na(oba$Dec..Long.))
-```
-Loading in the a map of Oregon for plotting our observations.
-```{r, Oregon Map}
-# Load Oregon county map data
-oregon_map <- map_data("county", "oregon") %>% 
-  select(long, lat, group, id = subregion)  # Correct column name is `region`
-```
-
-Plotted the bee observations so we can see what areas aren't reached by OBA. It also shows us the distribution of our
-observations and if we have any that seem like they might be incorrect. This is just an intial visualization to explore
-the observation points.
-```{r graph bee data}
-oba_observations_sf <- st_as_sf(oba, coords = c("Dec..Long.", "Dec..Lat."), crs = 4326)
-
-#st_crs(oba_observations_sf)
-#st_crs(oregon_map_sf) == st_crs(oba_observations_sf)
-
-#plot bee observations on to oregon map with fires
-ggplot() +
-  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
-               fill = "lightgrey", color = "white") +
-  geom_sf(data = oba_observations_sf, aes(color ="blue"), size = .1, alpha = 0.9) +
-  labs(title = "Bee Species Observations in Oregon",
-       x = "Longitude", 
-       y = "Latitude") +
-  theme_minimal() +
-  coord_sf()
-
-```
-
-Next, we loaded in our fire data sets. These are three fires that occurred in the same area in 2020. Two of the fire
-lines merged and the other fire was really close to the borders of the merged fire. These three fires are often
-recorded as one large fire called the Santiam fire. We are using these because they were 3 very large fires in 2020 
-that have a lot of bee observations around them. 
-```{r}
-# Load in each fire shape file
-LionsHead_sf <- read_sf("project/data/LionsHead/or4472312167920200817_20200810_20210810_burn_bndy.shp")
-
-BeachieCreek_sf <- read_sf("project/data/BeachieCreek/or4482112218820200816_20200810_20210810_burn_bndy.shp")
-
-Riverside_sf <- read_sf("project/data/Riverside/or4504912206220200908_20190720_20210725_burn_bndy.shp")
-
-# Set a common CRS 
-target_crs <- st_crs(4326)
-
-# Transform each fire to the target CRS
-LionsHead_sf <- st_transform(LionsHead_sf, target_crs)
-BeachieCreek_sf <- st_transform(BeachieCreek_sf, target_crs)
-Riverside_sf <- st_transform(Riverside_sf, target_crs)
-
-#check if they match
-print(st_crs(LionsHead_sf) == st_crs(BeachieCreek_sf))
-print(st_crs(BeachieCreek_sf) == st_crs(Riverside_sf))
-
-# Plotting the fires on the oregon map loaded in earlier
-ggplot() +
-  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
-               fill = "lightgrey", color = "white") +
-  geom_sf(data = LionsHead_sf, color = "Red", alpha = 0.9) +
-  geom_sf(data = BeachieCreek_sf, color = "Red", alpha = 0.9) +
-  geom_sf(data = Riverside_sf, color = "Red", alpha = 0.9) +
-  labs(
-    title = "Distribution of Oregon Fires in 2020",
-    x = "Longitude",
-    y = "Latitude"
-  ) +
-  theme_minimal() +
-  coord_sf()
-
-#Now lets zoom in
-
-# merge all fires into one
-fire_combined_bbox <- st_bbox(rbind(LionsHead_sf, BeachieCreek_sf, Riverside_sf))
-
-# Adjust the margins 
-fire_combined_bbox <- fire_combined_bbox + c(-0.1, -0.1, 0.1, 0.1)  #(xmin, ymin, xmax, ymax)
-
-# Final plotting of the zoomed in section of Oregon
-ggplot() +
-  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
-               fill = "lightgrey", color = "white") +
-  geom_sf(data = LionsHead_sf, aes(color = "Lions Head"), alpha = 0.9) +
-  geom_sf(data = BeachieCreek_sf, aes(color = "Beachie Creek"), alpha = 0.9) +
-  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
-  scale_color_manual(
-    name = "Fires",
-    values = c("Lions Head" = "red", "Beachie Creek" = "purple", "Riverside" = "yellow")
-  ) +
-  labs(
-    title = "Zoomed-In View of Oregon Fires in 2020",
-    x = "Longitude",
-    y = "Latitude"
-  ) +
-  theme_minimal() +
-  coord_sf(
-    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
-    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
-  )
-```
-Now we want to crop our bee observations to just the ones that are in the borders of the three fires.
-We are going to paste our fires into one polygon as it is often recorded as one fire. We used the function 
-st_intersection to crop our data set to the fire borders. 
-```{r}
-#Merge all fires into one object
-all_fire_boarder <- rbind(LionsHead_sf, BeachieCreek_sf, Riverside_sf)
-
-#Create a subset of obersvations inside the border
-only_fire_bees <- st_intersection(oba_observations_sf, all_fire_boarder)
-head(only_fire_bees)
-
-only_fire_bees_df <- as.data.frame(only_fire_bees)
-
-#merges genus and species and makes a new column
-only_fire_bees_df$GenusSpecies <- paste(only_fire_bees_df$Genus, only_fire_bees_df$Species)
-#create a subset
-final_oba_df <- only_fire_bees_df %>% select("Year.1", "GenusSpecies","Associated.plant...genus..species", "BurnBndLat", "BurnBndLon",)
-
-head(final_oba_df)
-```
-
-Here we plot our fires and our cropped bee observations from above on the map of Oregon
-```{r, subset data}
-
- ggplot() +
-  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
-               fill = "tan", color = "black") +
-  geom_sf(data = LionsHead_sf, aes(color = "Lions Head"), alpha = 0.9) +
-  geom_sf(data = BeachieCreek_sf, aes(color = "Beachie Creek"), alpha = 0.9) +
-  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
-  geom_sf(data = only_fire_bees, aes(color = "Bee Observation"), size = 1, alpha = 0.9) +
-  scale_color_manual(
-    name = "Fire and Observations",
-    values = c(
-      "Lions Head" = "red",
-      "Beachie Creek" = "purple",
-      "Riverside" = "Dark Green",
-      "Bee Observation" = "blue"
-    ),
-    breaks = c(
-      "Lions Head",
-      "Beachie Creek",
-      "Riverside",
-      "Bee Observation"
-    )
-  ) + 
-  labs(
-    title = "Oregon Santiam Fire in 2020",
-    x = "Longitude",
-    y = "Latitude"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    plot.background = element_rect(fill = "white")
-  ) +
-  coord_sf(
-    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
-    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
-  )
-
-#ggsave("oregon_fire_map.png", dpi = 300, width = 12, height = 8)  
-```
-
-We have a some rows with blank values or spaces that make the data difficult to use,
-we will remove these to make analysis easier.
-```{r}
-#removed blanks
-final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
-final_oba_df <- final_oba_df[final_oba_df$GenusSpecies != " ",]
-is.na(final_oba_df)
-final_oba_df
-```
-We also need to fix all the weird species names for the plants. There are a lot of
-weird names that make analysis challenging.
-```{r}
-## Remove the special character
-final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "\x92", "")
-
-# Removing blanks
-final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
-
-# Removing "net"
-final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "net", "")
-
-# Removing yarrow
-final_oba_df$Associated.plant...genus..species[final_oba_df$Associated.plant...genus..species == "Yarrow"] <- "Achillea millefollium"
-
-# Removing non plant
-final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "Weedy yellow comp.",]
-
-# Removing common names in ()
-final_oba_df$Associated.plant...genus..species <- gsub("\\s*\\(.*?\\)", "", final_oba_df$Associated.plant...genus..species)
-
-# Removing weird words
-final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, ",.*$", "")
-
-# Removing space
-final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "\\s+$", "")
-
-# Removing "sp."
-final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, " sp$", " sp.")
-
-# Removing "or"
-final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, " or .*", "")
-
-# Removing lists
-final_oba_df <- final_oba_df[!grepl(",", final_oba_df$Associated.plant...genus..species),]
-
-head(final_oba_df)
 ```
 
 Here we are creating two columns to sort the plant and bee species by genus and species.
@@ -468,6 +223,110 @@ for (i in 1:nrow(final_oba_df)) {
 head(final_oba_df)
 ```
 
+Data Wrangling and Summarizing:
+Plotted the bee observations so we can see what areas aren't reached by OBA. It also shows us the distribution of our
+observations and if we have any that seem like they might be incorrect. This is just an intial visualization to explore
+the observation points.
+```{r graph bee data}
+oba_observations_sf <- st_as_sf(oba, coords = c("Dec..Long.", "Dec..Lat."), crs = 4326)
+
+#st_crs(oba_observations_sf)
+#st_crs(oregon_map_sf) == st_crs(oba_observations_sf)
+
+#plot bee observations on to oregon map with fires
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = oba_observations_sf, aes(color ="blue"), size = .1, alpha = 0.9) +
+  labs(title = "Bee Species Observations in Oregon",
+       x = "Longitude", 
+       y = "Latitude") +
+  theme_minimal() +
+  coord_sf()
+```
+
+```{r}
+# Set a common CRS 
+target_crs <- st_crs(4326)
+
+# Transform each fire to the target CRS
+LionsHead_sf <- st_transform(LionsHead_sf, target_crs)
+BeachieCreek_sf <- st_transform(BeachieCreek_sf, target_crs)
+Riverside_sf <- st_transform(Riverside_sf, target_crs)
+
+#check if they match
+print(st_crs(LionsHead_sf) == st_crs(BeachieCreek_sf))
+print(st_crs(BeachieCreek_sf) == st_crs(Riverside_sf))
+
+# Plotting the fires on the oregon map loaded in earlier
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, color = "Red", alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, color = "Red", alpha = 0.9) +
+  geom_sf(data = Riverside_sf, color = "Red", alpha = 0.9) +
+  labs(
+    title = "Distribution of Oregon Fires in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf()
+
+#Now lets zoom in
+
+# merge all fires into one
+fire_combined_bbox <- st_bbox(rbind(LionsHead_sf, BeachieCreek_sf, Riverside_sf))
+
+# Adjust the margins 
+fire_combined_bbox <- fire_combined_bbox + c(-0.1, -0.1, 0.1, 0.1)  #(xmin, ymin, xmax, ymax)
+
+# Final plotting of the zoomed in section of Oregon
+ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "lightgrey", color = "white") +
+  geom_sf(data = LionsHead_sf, aes(color = "Lions Head"), alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, aes(color = "Beachie Creek"), alpha = 0.9) +
+  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
+  scale_color_manual(
+    name = "Fires",
+    values = c("Lions Head" = "red", "Beachie Creek" = "purple", "Riverside" = "yellow")
+  ) +
+  labs(
+    title = "Zoomed-In View of Oregon Fires in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  coord_sf(
+    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
+    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
+  )
+```
+
+Now we want to crop our bee observations to just the ones that are in the borders of the three fires.
+We are going to paste our fires into one polygon as it is often recorded as one fire. We used the function 
+st_intersection to crop our data set to the fire borders. 
+```{r}
+#Merge all fires into one object
+all_fire_boarder <- rbind(LionsHead_sf, BeachieCreek_sf, Riverside_sf)
+
+#Create a subset of obersvations inside the border
+only_fire_bees <- st_intersection(oba_observations_sf, all_fire_boarder)
+head(only_fire_bees)
+
+only_fire_bees_df <- as.data.frame(only_fire_bees)
+
+#merges genus and species and makes a new column
+only_fire_bees_df$GenusSpecies <- paste(only_fire_bees_df$Genus, only_fire_bees_df$Species)
+#create a subset
+final_oba_df <- only_fire_bees_df %>% select("Year.1", "GenusSpecies","Associated.plant...genus..species", "BurnBndLat", "BurnBndLon",)
+
+head(final_oba_df)
+```
+
+Hypothesis Tests:
+(Paragraph discussing the Tests used)
 Creating a species interaction network for before the fires.
 ```{r}
 # Filter data for 'before' fire interactions
@@ -585,7 +444,6 @@ ggplot(bee_null_df, aes(x = bee_null_distribution)) +
        #units = "in",
       #bg = "white")
 ```
-
 Here we conduct our simulation for the plants.
 ```{r}
 # Observed difference in richness
@@ -640,7 +498,6 @@ ggplot(plant_null_df, aes(x = plant_null_distribution)) +
        #units = "in",
       #bg = "white")
 ```
-
 Species interaction network for after the fires.
 ```{r}
 # Filter data for 'before' fire interactions
@@ -747,4 +604,73 @@ ggplot(plant_summary_stats_df, aes(x = Site.status, y = Species.richness, fill =
        #units = "in",
       # bg = "white")
 ```
+
+Visualization:
+```{r, load in all final visualizations}
+#Here we plot our fires and our cropped bee observations from above on the map of Oregon
+ ggplot() +
+  geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
+               fill = "tan", color = "black") +
+  geom_sf(data = LionsHead_sf, aes(color = "Lions Head"), alpha = 0.9) +
+  geom_sf(data = BeachieCreek_sf, aes(color = "Beachie Creek"), alpha = 0.9) +
+  geom_sf(data = Riverside_sf, aes(color = "Riverside"), alpha = 0.9) +
+  geom_sf(data = only_fire_bees, aes(color = "Bee Observation"), size = 1, alpha = 0.9) +
+  scale_color_manual(
+    name = "Fire and Observations",
+    values = c(
+      "Lions Head" = "red",
+      "Beachie Creek" = "purple",
+      "Riverside" = "Dark Green",
+      "Bee Observation" = "blue"
+    ),
+    breaks = c(
+      "Lions Head",
+      "Beachie Creek",
+      "Riverside",
+      "Bee Observation"
+    )
+  ) + 
+  labs(
+    title = "Oregon Santiam Fire in 2020",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    plot.background = element_rect(fill = "white")
+  ) +
+  coord_sf(
+    xlim = c(fire_combined_bbox["xmin"], fire_combined_bbox["xmax"]),
+    ylim = c(fire_combined_bbox["ymin"], fire_combined_bbox["ymax"])
+  )
+
+#ggsave("oregon_fire_map.png", dpi = 300, width = 12, height = 8)  
+```
+
+
+Discussion/Conclusion:
+  This project investigated how bee and native plant species differ before and after wildfires. We hypothesized that the composition of both bee and native plant communities would change significantly following a wildfire, and that post-fire species would be closely linked to early successional plant species. After analyzing OBA data and intersecting it with the wildfire boundaries to create a subset, we calculated species richness for both plants and bees before and after the event. The results showed a decrease in species richness for both groups after the fire. This finding supports our hypothesis and indicates that wildfires negatively affect both bee and native plant richness. 
+	The networks generated from the OBA dataset helped to further visualize plant-bee interactions both before and after the fires. These networks highlighted that bees interacted with shrubs and flowering plants known to colonize early successional landscapes following wildfires, reinforcing our initial hypotheses. These networks also revealed a gap in our data. We currently lack observational data collected after wildfires. This shortfall may stem from restricted public access to recently burned areas or reduced volunteer participation due to unfavorable conditions. The timing of these fires during the COVID-19 pandemic may have further limited data collection, resulting in insufficient observations. However, bootstrapping simulations for both groups yielded non-significant p-values (bees: 0.7025; plants: 0.1936), showing the limitations of the small post-fire dataset.
+	These findings suggest that wildfires not only reduce species richness but also disrupt bee-plant interaction networks, potentially hindering ecosystem recovery. The emergence of early-successional plants as primary interaction partners highlights their importance in post-fire recovery. This holds consistent with ecological studies emphasizing the importance of pioneer species. Due to the lack of data, These findings should only represent the immediate effects of wildfires and not their long-term effect on bee-plant interactions. 
+Future research should prioritize expanding post-fire datasets to better capture the recovery of pollinators and their environments. Understanding how wildfires impact pollinator-plant relationships is crucial for developing effective conservation strategy. As the climate continues to change and drive more frequent and intense wildfires, protecting pollinator ecosystems is vital in preserving pollinator functionality and biodiversity.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
