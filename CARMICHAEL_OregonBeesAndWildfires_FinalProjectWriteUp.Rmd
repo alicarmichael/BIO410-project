@@ -181,7 +181,9 @@ final_oba_df <- only_fire_bees_df %>% select("Year.1", "GenusSpecies","Associate
 head(final_oba_df)
 ```
 
-Here we plot our fires and our cropped bee observations from above on the map of Oregon
+Here we plot our fires and our cropped bee observations from above on the map of Oregon. There are several observations in
+the same region as the fires but they are not separated into different years yet. There are more observations in the
+Lionshead and Beachie Creek fires than the Riverside fire.
 ```{r, subset data}
 
  ggplot() +
@@ -225,7 +227,8 @@ Here we plot our fires and our cropped bee observations from above on the map of
 ```
 
 We have a some rows with blank values or spaces that make the data difficult to use,
-we will remove these to make analysis easier.
+we will remove these to make analysis easier. We can remove them by just subsetting the data for
+every entry that doesn't have a blank space.
 ```{r}
 #removed blanks
 final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
@@ -235,7 +238,8 @@ final_oba_df
 ```
 
 We also need to fix all the weird species names for the plants. There are a lot of
-weird names that make analysis challenging.
+weird names that make analysis challenging. We can do this using regular expressions and string methods. 
+This will make it easier to change all of the observations we have since there are quite a few.
 ```{r}
 ## Remove the special character
 final_oba_df$Associated.plant...genus..species <- str_replace_all(final_oba_df$Associated.plant...genus..species, "\x92", "")
@@ -325,6 +329,7 @@ table(final_oba_df$Bee.genus)
 ```
 
 Drop the NA values to get our final clean data set with the correct bee and plant resolutions.
+Again, we can just filter these out but this time using the filter function.
 ```{r}
 final_oba_df <- final_oba_df %>% 
   filter(!is.na(Plant.genus) & !is.na(Bee.genus))
@@ -333,7 +338,11 @@ final_oba_df
 ```
 
 Add the site status column to our final clean data frame. We want the site status to be "Before" if
-the year of the observation was 2020 and before and "After" if the observation was after 2020.
+the year of the observation was 2020 and before and "After" if the observation was after 2020. First we make an 
+empty column full of NA values, then we will loop through our data set, then we will check if the Year.1 
+column is before before 2020 and set that equal to "Before". We will then check if the year is after 2020 
+and set that to after. We set anything equal to 2020 to before because the observations wouldn't be recorded 
+during or directly after the 2020 fire.
 ```{r}
 # Initialize an empty site status column
 final_oba_df$Site.status <- NA
@@ -352,7 +361,11 @@ for (i in 1:nrow(final_oba_df)) {
 head(final_oba_df)
 ```
 
-Creating a species interaction network for before the fires.
+Creating a species interaction network for before the fires. We will use the NetworkD3 package for 
+our interactions network. We first filter our observations to just before the fires and set that to a
+variable called "before_fire_interactions". Next we create a data frame of our before observations as nodes so we 
+can plot the data frame as a network and then do the same thing for the links. We then aggregate to get the unique 
+pairs of interactions and then plot are final network.
 ```{r}
 # Filter data for 'before' fire interactions
 before_fire_interactions <- final_oba_df[final_oba_df$Site.status == "Before", ]
@@ -397,8 +410,10 @@ sankey_before <- sankeyNetwork(
 sankey_before
 ```
 
-Now we want to calculate some statistics to simualte. We want to calculate the species richness before
-and after the fires and then take the difference in richness for both plants and bees.
+Now we want to calculate some statistics to simulate. We want to calculate the species richness before
+and after the fires and then take the difference in richness for both plants and bees. We can calculate
+richness by taking the number of unique bee and plant species and then find the change in richness by 
+subtracting the after richness from the before.
 ```{r}
 # Richness for bees
 Bee_richness_before <- length(unique(final_oba_df$Bee.genus[final_oba_df$Site.status == "Before"]))
@@ -411,9 +426,24 @@ Plant_richness_after <- length(unique(final_oba_df$Plant.genus[final_oba_df$Site
 Plant_richness_change <- Plant_richness_after - Plant_richness_before
 ```
 
+Null hypothesis: There will be no difference in the change of species richness for bee or plant 
+species before and after the Santiam fire.
+
+Alternative hypothesis: There will be a difference in the change of species richness for bee and plant
+species before and after the Santiam fire. We expect the species richness to be lower after the fire.
+
 Now we will conduct our simulation using bootstrapping. Our sample size for our "after" group is really small 
 so we will use resampling and then a density histogram to simulate what our hypothesis could look
-like if there was more data available.
+like if there was more data available. We first set a number of iterations to simulate, we want this number
+to be relatively large because our sample size is so small. We will use a function called replicate to simulate
+our distribution under the null. We will start by calling randomize on our site status column to shuffle our
+before and after fire labels, we will assign this to a new column called shuffled site status. Then we will 
+take a sample for our before and after bee groups using the shuffled site status column, this is our new 
+data set to calculate our species richness with. We can calculate the species richness the same way we 
+did above but with our simulated data set. For each sample we do we will record it and plot the change in 
+richness on our density histogram. Then, we can calculate our p-value by taking the absolute value of the 
+number of species richness change values were larger or more extreme than our observed value. We will conduct 
+these two simulations separately for the bee and plant species. 
 ```{r}
 # Observed difference in richness
 bee_observed_diff <- Bee_richness_after - Bee_richness_before
@@ -443,7 +473,7 @@ bee_null_distribution <- replicate(num_iterations, {
 })
 
 # Compare observed difference with null distribution
-p_value <- mean(abs(bee_null_distribution) >= abs(observed_diff))
+p_value <- mean(abs(bee_null_distribution) >= abs(bee_observed_diff))
 print(paste("p-value: ", p_value))
 
 # Plot the null distribution
@@ -469,6 +499,11 @@ ggplot(bee_null_df, aes(x = bee_null_distribution)) +
        #units = "in",
       #bg = "white")
 ```
+Looking at our histogram we can see that our observed change in species richness (red dashed line) falls
+right around the mode of our data. This matches our calculated p-value (0.7025), showing no significance
+in the change in bee species richness before and after the fire. The data has a small spread with
+lower richness occurring more often than higher change in richness. 
+
 
 Here we conduct our simulation for the plants.
 ```{r}
@@ -500,7 +535,7 @@ plant_null_distribution <- replicate(num_iterations, {
 })
 
 # Compare observed difference with null distribution
-p_value <- mean(abs(plant_null_distribution) >= abs(observed_diff))
+p_value <- mean(abs(plant_null_distribution) >= abs(plant_observed_diff))
 print(paste("p-value: ", p_value))
 
 # Plot the null distribution
@@ -524,8 +559,14 @@ ggplot(plant_null_df, aes(x = plant_null_distribution)) +
        #units = "in",
       #bg = "white")
 ```
+The observed value for the plant species richness also falls within our distribution of simulated
+change in plant species richness. Our p-value (0.1936) showed no statistical significance. However,
+it is lower than our bee p-value. This p-value could be borderline significant and may warrant further
+analysis. The spread of our simulation is smaller than the bee species simulation, and we often see a 
+larger change in species richness for the plants. 
 
-Species interaction network for after the fires.
+Species interaction network for after the fires. Again, we will use the same process 
+for the network for before the fires. 
 ```{r}
 # Filter data for 'before' fire interactions
 after_fire_interactions <- final_oba_df[final_oba_df$Site.status == "After", ]
@@ -569,7 +610,10 @@ sankey <- sankeyNetwork(
 sankey
 ```
 
-Bar plot for the bee species richness.
+Bar plot for the bee species richness. The orange bar represents the species 
+richness before the fire and the light blue bar is after. There is a large 
+difference in bee species richness before and after the fire but whether this
+is significant is unknown because there are very few observations for after. 
 ```{r}
 bee_summary_stats_df <- data.frame(
   Site.status = c("Before", "After"),
@@ -601,7 +645,9 @@ ggplot(bee_summary_stats_df, aes(x = Site.status, y = Species.richness, fill = S
        #bg = "white")
 ```
 
-Bar plot for the plant species richness.
+Bar plot for the plant species richness. Similar the bee species, there 
+is a large difference in species richness for before and after the fire. 
+We can not conclusively say whether this difference is significant.
 ```{r}
 plant_summary_stats_df <- data.frame(
   Site.status = c("Before", "After"),
@@ -635,10 +681,13 @@ ggplot(plant_summary_stats_df, aes(x = Site.status, y = Species.richness, fill =
 
 
 Discussion/Conclusion:
-  This project investigated how bee and native plant species differ before and after wildfires. We hypothesized that the composition of both bee and native plant communities would change significantly following a wildfire, and that post-fire species would be closely linked to early successional plant species. After analyzing OBA data and intersecting it with the wildfire boundaries to create a subset, we calculated species richness for both plants and bees before and after the event. The results showed a decrease in species richness for both groups after the fire. This finding supports our hypothesis and indicates that wildfires negatively affect both bee and native plant richness. 
-	The networks generated from the OBA dataset helped to further visualize plant-bee interactions both before and after the fires. These networks highlighted that bees interacted with shrubs and flowering plants known to colonize early successional landscapes following wildfires, reinforcing our initial hypotheses. These networks also revealed a gap in our data. We currently lack observational data collected after wildfires. This shortfall may stem from restricted public access to recently burned areas or reduced volunteer participation due to unfavorable conditions. The timing of these fires during the COVID-19 pandemic may have further limited data collection, resulting in insufficient observations. However, bootstrapping simulations for both groups yielded non-significant p-values (bees: 0.7025; plants: 0.1936), showing the limitations of the small post-fire dataset.
-	These findings suggest that wildfires not only reduce species richness but also disrupt bee-plant interaction networks, potentially hindering ecosystem recovery. The emergence of early-successional plants as primary interaction partners highlights their importance in post-fire recovery. This holds consistent with ecological studies emphasizing the importance of pioneer species. Due to the lack of data, These findings should only represent the immediate effects of wildfires and not their long-term effect on bee-plant interactions. 
+  This project investigated how bee and native plant species differ before and after wildfires. We hypothesized that the composition of both bee and native plant communities would change significantly following a wildfire, and that post-fire species would be closely linked to early successional plant species. After analyzing OBA data and intersecting it with the wildfire boundaries to create a subset, we calculated species richness for both plants and bees before and after the event. The results showed a decrease in species richness for both groups after the fire. However, bootstrapping simulations for both groups yielded non-significant p-values (bees: 0.7025; plants: 0.1936), showing the limitations of the small post-fire dataset. Therefore we reject our null hypothesis. 
+	The networks generated from the OBA dataset helped to further visualize plant-bee interactions both before and after the fires. These networks highlighted that bees interacted with shrubs and flowering plants known to colonize early successional landscapes following wildfires, reinforcing our initial hypotheses. These networks also revealed a gap in our data. We currently lack observational data collected after wildfires. This shortfall may stem from restricted public access to recently burned areas or reduced volunteer participation due to unfavorable conditions. The timing of these fires during the COVID-19 pandemic may have further limited data collection, resulting in insufficient observations. 
+	These findings suggest that wildfires may reduce species richness and disrupt bee-plant interaction networks, potentially hindering ecosystem recovery. Further analysis with more observations would be needed to make a conclusive statement on the extent of the relationship between wildfires and bee and plant species. The emergence of early-successional plants as primary interaction partners highlights their importance in post-fire recovery. This holds consistent with ecological studies emphasizing the importance of pioneer species. Due to the lack of data, These findings should only represent the immediate effects of wildfires and not their long-term effect on bee-plant interactions. 
 Future research should prioritize expanding post-fire datasets to better capture the recovery of pollinators and their environments. Understanding how wildfires impact pollinator-plant relationships is crucial for developing effective conservation strategy. As the climate continues to change and drive more frequent and intense wildfires, protecting pollinator ecosystems is vital in preserving pollinator functionality and biodiversity.
+
+
+
 
 
 
