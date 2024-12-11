@@ -1,6 +1,6 @@
 ---
 title: "Oregon Bees and Wildfires"
-author: "Ali Carmichael"
+author: "Ali Carmichael and Vincent Cortes"
 date: "2024-12-08"
 output: pdf_document
 ---
@@ -91,7 +91,7 @@ oba_observations_sf <- st_as_sf(oba, coords = c("Dec..Long.", "Dec..Lat."), crs 
 ggplot() +
   geom_polygon(data = oregon_map, aes(x = long, y = lat, group = group), 
                fill = "lightgrey", color = "white") +
-  geom_sf(data = oba_observations_sf, aes(color ="blue"), size = .1, alpha = 0.9) +
+  geom_sf(data = oba_observations_sf, size = .1, alpha = 0.9) +
   labs(title = "Bee Species Observations in Oregon",
        x = "Longitude", 
        y = "Latitude") +
@@ -122,7 +122,7 @@ ggplot() +
   geom_sf(data = BeachieCreek_sf, color = "Red", alpha = 0.9) +
   geom_sf(data = Riverside_sf, color = "Red", alpha = 0.9) +
   labs(
-    title = "Distribution of Oregon Fires in 2020",
+    title = "2020 Santiam Fire",
     x = "Longitude",
     y = "Latitude"
   ) +
@@ -149,7 +149,7 @@ ggplot() +
     values = c("Lions Head" = "red", "Beachie Creek" = "purple", "Riverside" = "yellow")
   ) +
   labs(
-    title = "Zoomed-In View of Oregon Fires in 2020",
+    title = "Zoomed-In View of 2020 Santiam",
     x = "Longitude",
     y = "Latitude"
   ) +
@@ -499,6 +499,8 @@ ggplot(bee_null_df, aes(x = bee_null_distribution)) +
        #units = "in",
       #bg = "white")
 ```
+
+
 Looking at our histogram we can see that our observed change in species richness (red dashed line) falls
 right around the mode of our data. This matches our calculated p-value (0.7025), showing no significance
 in the change in bee species richness before and after the fire. The data has a small spread with
@@ -559,6 +561,8 @@ ggplot(plant_null_df, aes(x = plant_null_distribution)) +
        #units = "in",
       #bg = "white")
 ```
+
+
 The observed value for the plant species richness also falls within our distribution of simulated
 change in plant species richness. Our p-value (0.1936) showed no statistical significance. However,
 it is lower than our bee p-value. This p-value could be borderline significant and may warrant further
@@ -684,12 +688,24 @@ Discussion/Conclusion:
   This project investigated how bee and native plant species differ before and after wildfires. We hypothesized that the composition of both bee and native plant communities would change significantly following a wildfire, and that post-fire species would be closely linked to early successional plant species. After analyzing OBA data and intersecting it with the wildfire boundaries to create a subset, we calculated species richness for both plants and bees before and after the event. The results showed a decrease in species richness for both groups after the fire. However, bootstrapping simulations for both groups yielded non-significant p-values (bees: 0.7025; plants: 0.1936), showing the limitations of the small post-fire dataset. Therefore we reject our null hypothesis. 
 	The networks generated from the OBA dataset helped to further visualize plant-bee interactions both before and after the fires. These networks highlighted that bees interacted with shrubs and flowering plants known to colonize early successional landscapes following wildfires, reinforcing our initial hypotheses. These networks also revealed a gap in our data. We currently lack observational data collected after wildfires. This shortfall may stem from restricted public access to recently burned areas or reduced volunteer participation due to unfavorable conditions. The timing of these fires during the COVID-19 pandemic may have further limited data collection, resulting in insufficient observations. 
 	These findings suggest that wildfires may reduce species richness and disrupt bee-plant interaction networks, potentially hindering ecosystem recovery. Further analysis with more observations would be needed to make a conclusive statement on the extent of the relationship between wildfires and bee and plant species. The emergence of early-successional plants as primary interaction partners highlights their importance in post-fire recovery. This holds consistent with ecological studies emphasizing the importance of pioneer species. Due to the lack of data, These findings should only represent the immediate effects of wildfires and not their long-term effect on bee-plant interactions. 
-Future research should prioritize expanding post-fire datasets to better capture the recovery of pollinators and their environments. Understanding how wildfires impact pollinator-plant relationships is crucial for developing effective conservation strategy. As the climate continues to change and drive more frequent and intense wildfires, protecting pollinator ecosystems is vital in preserving pollinator functionality and biodiversity.
+  Future research should prioritize expanding post-fire datasets to better capture the recovery of pollinators and their environments. Understanding how wildfires impact pollinator-plant relationships is crucial for developing effective conservation strategy. As the climate continues to change and drive more frequent and intense wildfires, protecting pollinator ecosystems is vital in preserving pollinator functionality and biodiversity.
 
 
+Works Cited:
 
+Adlam, Christopher, and Carrie Berger. “The Ecological Effects of Fire.” OSU Extension Catalog, February 2022, https://extension.oregonstate.edu/catalog/pub/em-9340-ecological-effects-fire.
 
+“The Importance of Pollinators.” USDA, https://www.usda.gov/peoples-garden/pollinators. Accessed 12 November 2024.
 
+Rojas, Cristina. “LATEST CLIMATE ASSESSMENT SAYS OREGON IS GETTING WARMER — WHAT'S THAT MEAN FOR THE STATE?” Portland State University, 21 January 2023, https://www.pdx.edu/news/latest-climate-assessment-says-oregon-getting-warmer-whats-mean-state.
+
+Stephen, Mason C., et al. “Responses from bees, butterflies, and ground beetles to different fire and site characteristics: A global meta-analysis.” Biological Conservation, vol. 261, 2021, https://www.sciencedirect.com/science/article/pii/S0006320721003177?via%3Dihub.
+
+“Wildfire climate connection.” National Oceanic and Atmospheric Administration, https://www.noaa.gov/noaa-wildfire/wildfire-climate-connection. Accessed 12 November 2024.
+
+“Wildfires.” Environmental Defense Fund, https://www.edf.org/climate/heres-how-climate-change-affects-wildfires. Accessed 12 November 2024.
+
+Wilkin, Katherine M., et al. “DECADE-LONG PLANT COMMUNITY RESPONSES TO SHRUBLAND FUEL HAZARD REDUCTION.” Fire Ecology, vol. 13, no. 2, 2017, pp. 105-136, https://www.ponisiolab.com/uploads/9/4/6/4/94640692/wilkin-317.pdf.
 
 
 
