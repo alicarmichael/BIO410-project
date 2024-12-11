@@ -15,6 +15,7 @@ Introduction:
 
 Packages use for our project
 ```{r load packs}
+#install.packages("webshot2")
 library(terra)
 library(ggplot2)
 library(dplyr)
@@ -233,8 +234,8 @@ every entry that doesn't have a blank space.
 #removed blanks
 final_oba_df <- final_oba_df[final_oba_df$Associated.plant...genus..species != "",]
 final_oba_df <- final_oba_df[final_oba_df$GenusSpecies != " ",]
-is.na(final_oba_df)
-final_oba_df
+head(is.na(final_oba_df))
+head(final_oba_df)
 ```
 
 We also need to fix all the weird species names for the plants. There are a lot of
@@ -334,7 +335,7 @@ Again, we can just filter these out but this time using the filter function.
 final_oba_df <- final_oba_df %>% 
   filter(!is.na(Plant.genus) & !is.na(Bee.genus))
 
-final_oba_df
+head(final_oba_df)
 ```
 
 Add the site status column to our final clean data frame. We want the site status to be "Before" if
@@ -408,6 +409,12 @@ sankey_before <- sankeyNetwork(
 
 # Here is the network
 sankey_before
+
+library(webshot2)
+library(htmlwidgets)
+saveWidget(sankey_before, "sankey_before.html", selfcontained = TRUE)
+webshot("sankey_before.html", "sankey_before.png")
+knitr::include_graphics("sankey_before.png")
 ```
 
 Now we want to calculate some statistics to simulate. We want to calculate the species richness before
@@ -492,12 +499,6 @@ ggplot(bee_null_df, aes(x = bee_null_distribution)) +
     axis.title.y = element_text(size = 14),
     axis.text = element_text(size = 12)
   )
-
-#ggsave("simulated_bee_species_richness.png", 
-       #plot = bee_plot,
-       #dpi = 300,
-       #units = "in",
-      #bg = "white")
 ```
 
 
@@ -555,11 +556,6 @@ ggplot(plant_null_df, aes(x = plant_null_distribution)) +
     axis.title.y = element_text(size = 14),
     axis.text = element_text(size = 12)
   )
-
-#ggsave("simulated_plant_species_richness.png", 
-       #dpi = 300,
-       #units = "in",
-      #bg = "white")
 ```
 
 
@@ -597,7 +593,7 @@ color_scale <- 'd3.scaleOrdinal()
                  .domain(["Bee", "Plant"])
                  .range(["#1f78b4", "#33a02c"])'
 
-sankey <- sankeyNetwork(
+sankey_after <- sankeyNetwork(
   Links = links_after,
   Nodes = nodes_after,
   Source = "source",
@@ -611,7 +607,13 @@ sankey <- sankeyNetwork(
 )
 
 # Render the Sankey diagram
-sankey
+sankey_after
+
+library(webshot2)
+library(htmlwidgets)
+saveWidget(sankey_after, "sankey_after.html", selfcontained = TRUE)
+webshot("sankey_after.html", "sankey_after.png")
+knitr::include_graphics("sankey_after.png")
 ```
 
 Bar plot for the bee species richness. The orange bar represents the species 
@@ -642,11 +644,6 @@ ggplot(bee_summary_stats_df, aes(x = Site.status, y = Species.richness, fill = S
     axis.title.y = element_text(size = 14),
     axis.text = element_text(size = 12)
   )
-
-#ggsave("bee_species_richness.png", 
-       #dpi = 300,
-       #units = "in",
-       #bg = "white")
 ```
 
 Bar plot for the plant species richness. Similar the bee species, there 
@@ -676,11 +673,6 @@ ggplot(plant_summary_stats_df, aes(x = Site.status, y = Species.richness, fill =
     axis.title.y = element_text(size = 14),
     axis.text = element_text(size = 12)
   )
-
-#ggsave("plant_species_richness.png", 
-       #dpi = 300,
-       #units = "in",
-      # bg = "white")
 ```
 
 
